@@ -10,9 +10,63 @@ interface GoogleEvent {
   start?: { dateTime?: string; date?: string };
   end?: { dateTime?: string; date?: string };
   status?: string;
+  colorId?: string;
 }
 
 const ACCOUNT_COLORS = ['#5E5CE6', '#FF9F0A', '#30D158', '#FF375F', '#64D2FF'];
+
+// Google's event colorId -> hex palette rarely changes, so it's fetched once
+// per app session and shared across every account.
+let eventColorMapPromise: Promise<Record<string, string>> | null = null;
+
+function getEventColorMap(accessToken: string): Promise<Record<string, string>> {
+  if (!eventColorMapPromise) {
+    eventColorMapPromise = fetch('https://www.googleapis.com/calendar/v3/colors', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`colors fetch failed (${res.status})`);
+        return res.json() as Promise<{ event?: Record<string, { background: string }> }>;
+      })
+      .then((json) => {
+        const map: Record<string, string> = {};
+        for (const [id, c] of Object.entries(json.event ?? {})) {
+          map[id] = c.background;
+        }
+        return map;
+      })
+      .catch(() => ({}));
+  }
+  return eventColorMapPromise;
+}
+
+// The color the account's primary calendar is assigned in Google Calendar
+// (what you see in the calendar list / event chips there), per-account since
+// it's a per-user personalization, not a global calendar property.
+const calendarColorCache = new Map<string, string>();
+
+async function getPrimaryCalendarColor(
+  account: GoogleAccount,
+  accessToken: string,
+  fallback: string
+): Promise<string> {
+  const cached = calendarColorCache.get(account.id);
+  if (cached) return cached;
+
+  try {
+    const res = await fetch(
+      'https://www.googleapis.com/calendar/v3/users/me/calendarList/primary',
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!res.ok) throw new Error(`calendarList fetch failed (${res.status})`);
+    const json = (await res.json()) as { backgroundColor?: string };
+    const color = json.backgroundColor ?? fallback;
+    calendarColorCache.set(account.id, color);
+    return color;
+  } catch {
+    return fallback;
+  }
+}
 
 interface AccountFetchResult {
   events: CalendarEvent[];
@@ -21,7 +75,7 @@ interface AccountFetchResult {
 
 async function fetchEventsForAccount(
   account: GoogleAccount,
-  color: string
+  fallbackColor: string
 ): Promise<AccountFetchResult> {
   const accessToken = await getValidAccessToken(account.id);
 
@@ -36,10 +90,14 @@ async function fetchEventsForAccount(
     maxResults: '250',
   });
 
-  const res = await fetch(
-    `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`,
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  );
+  const [res, calendarColor, eventColorMap] = await Promise.all([
+    fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    ),
+    getPrimaryCalendarColor(account, accessToken, fallbackColor),
+    getEventColorMap(accessToken),
+  ]);
 
   if (!res.ok) {
     const body = await res.text();
@@ -68,7 +126,7 @@ async function fetchEventsForAccount(
         isAllDay,
         location: e.location ?? null,
         description: e.description ?? null,
-        calendarColor: color,
+        calendarColor: (e.colorId && eventColorMap[e.colorId]) || calendarColor,
       };
     });
 

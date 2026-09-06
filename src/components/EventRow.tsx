@@ -3,10 +3,15 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { CalendarEvent } from '../types';
 import { Theme, radius, spacing } from '../theme';
 
-function formatTime(iso: string, isAllDay: boolean) {
-  if (isAllDay) return 'All day';
-  const d = new Date(iso);
-  return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+function formatClock(iso: string) {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
+function formatTimeRange(event: CalendarEvent) {
+  if (event.isAllDay) return 'All day';
+  const start = formatClock(event.startISO);
+  if (!event.endISO) return start;
+  return `${start} - ${formatClock(event.endISO)}`;
 }
 
 export function EventRow({
@@ -30,9 +35,7 @@ export function EventRow({
     >
       <View style={[styles.colorBar, { backgroundColor: event.calendarColor }]} />
       <View style={styles.textBlock}>
-        <Text style={[styles.time, { color: theme.subtext }]}>
-          {formatTime(event.startISO, event.isAllDay)}
-        </Text>
+        <Text style={[styles.time, { color: theme.subtext }]}>{formatTimeRange(event)}</Text>
         <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
           {event.title}
         </Text>
