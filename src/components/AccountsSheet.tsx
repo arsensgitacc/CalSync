@@ -1,5 +1,7 @@
+import { BottomSheetView } from '@gorhom/bottom-sheet';
 import React from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { BottomSheet } from './BottomSheet';
 import { GoogleAccount } from '../types';
 import { Theme, radius, spacing } from '../theme';
 
@@ -19,10 +21,8 @@ export function AccountsSheet({
   onRemoveAccount: (accountId: string) => void;
 }) {
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose} />
-      <View style={[styles.sheet, { backgroundColor: theme.card }]}>
-        <View style={[styles.handle, { backgroundColor: theme.border }]} />
+    <BottomSheet visible={visible} onClose={onClose} theme={theme}>
+      <BottomSheetView style={styles.content}>
         <Text style={[styles.title, { color: theme.text }]}>Accounts</Text>
 
         {accounts.map((account) => (
@@ -36,32 +36,16 @@ export function AccountsSheet({
           </View>
         ))}
 
-        <Pressable
-          onPress={onAddAccount}
-          style={[styles.addButton, { borderColor: theme.accent }]}
-        >
+        <Pressable onPress={onAddAccount} style={[styles.addButton, { borderColor: theme.accent }]}>
           <Text style={{ color: theme.accent, fontWeight: '600' }}>+ Add another account</Text>
         </Pressable>
-      </View>
-    </Modal>
+      </BottomSheetView>
+    </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)' },
-  sheet: {
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    padding: spacing.lg,
-    paddingBottom: spacing.xl,
-  },
-  handle: {
-    width: 40,
-    height: 5,
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginBottom: spacing.md,
-  },
+  content: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
   title: { fontSize: 18, fontWeight: '700', marginBottom: spacing.md },
   row: {
     flexDirection: 'row',

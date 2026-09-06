@@ -52,3 +52,14 @@ export async function cancelEventAlarm(alarmId: string): Promise<void> {
   await ExpoAlarmKit.cancelAlarm(alarmId);
   console.log(`[alarmKit] cancelled ${alarmId}`);
 }
+
+/**
+ * Ground truth of every alarm ID AlarmKit currently has scheduled, regardless
+ * of whether our own SQLite store still has a record of it. Used to detect
+ * alarms orphaned by e.g. an app reinstall wiping our local bookkeeping
+ * without necessarily cancelling the underlying native alarm.
+ */
+export function getAllNativeAlarmIds(): string[] {
+  ensureConfigured();
+  return ExpoAlarmKit.getAllAlarms();
+}

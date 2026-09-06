@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { AccountsSheet } from '../components/AccountsSheet';
+import { AllAlarmsSheet } from '../components/AllAlarmsSheet';
 import { AlarmSheet } from '../components/AlarmSheet';
 import { EventRow } from '../components/EventRow';
 import { cancelEventAlarm, requestAlarmAuthorization, scheduleEventAlarm } from '../lib/alarmKit';
@@ -48,6 +49,7 @@ export function EventsScreen({
   const [syncWarning, setSyncWarning] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [accountsSheetVisible, setAccountsSheetVisible] = useState(false);
+  const [allAlarmsSheetVisible, setAllAlarmsSheetVisible] = useState(false);
 
   const loadAlarms = useCallback(async () => {
     const records = await getAllAlarmRecords();
@@ -183,9 +185,14 @@ export function EventsScreen({
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: theme.text }]}>Upcoming</Text>
-        <Pressable onPress={() => setAccountsSheetVisible(true)}>
-          <Text style={{ color: theme.subtext }}>Accounts</Text>
-        </Pressable>
+        <View style={styles.headerButtons}>
+          <Pressable onPress={() => setAllAlarmsSheetVisible(true)}>
+            <Text style={{ color: theme.subtext }}>Alarms</Text>
+          </Pressable>
+          <Pressable onPress={() => setAccountsSheetVisible(true)}>
+            <Text style={{ color: theme.subtext }}>Accounts</Text>
+          </Pressable>
+        </View>
       </View>
 
       {syncWarning ? (
@@ -248,6 +255,14 @@ export function EventsScreen({
         onAddAccount={onAddAccount}
         onRemoveAccount={handleRemoveAccount}
       />
+
+      <AllAlarmsSheet
+        visible={allAlarmsSheetVisible}
+        events={events}
+        theme={theme}
+        onClose={() => setAllAlarmsSheetVisible(false)}
+        onChanged={loadAlarms}
+      />
     </View>
   );
 }
@@ -262,6 +277,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     paddingBottom: spacing.sm,
   },
+  headerButtons: { flexDirection: 'row', gap: spacing.md },
   headerTitle: { fontSize: 28, fontWeight: '700' },
   syncWarning: { fontSize: 12, paddingHorizontal: spacing.md, paddingBottom: spacing.xs },
   sectionHeader: { fontSize: 13, fontWeight: '700', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, textTransform: 'uppercase' },

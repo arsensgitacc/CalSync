@@ -1,5 +1,7 @@
+import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import React, { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { BottomSheet } from './BottomSheet';
 import { AlarmAnchor, AlarmRecord, CalendarEvent } from '../types';
 import { Theme, radius, spacing } from '../theme';
 
@@ -58,14 +60,18 @@ export function AlarmSheet({
   onSave: (selected: { anchor: AlarmAnchor; offsetMinutes: number }[]) => void;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   useEffect(() => {
     if (!event) return;
     const keys = existingAlarms.map(keyForRecord).filter((k): k is string => !!k);
     setSelected(new Set(keys));
+    setDescriptionExpanded(false);
   }, [event?.id, visible]);
 
   if (!event) return null;
+
+  const isLongDescription = (event.description?.length ?? 0) > 150;
 
   const toggle = (key: string) => {
     setSelected((prev) => {
@@ -102,17 +108,28 @@ export function AlarmSheet({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose} />
-      <View style={[styles.sheet, { backgroundColor: theme.card }]}>
-        <View style={[styles.handle, { backgroundColor: theme.border }]} />
+    <BottomSheet visible={visible} onClose={onClose} theme={theme}>
+      <BottomSheetScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={[styles.title, { color: theme.text }]} numberOfLines={2}>
           {event.title}
         </Text>
+
         {event.description ? (
-          <Text style={[styles.description, { color: theme.subtext }]}>
-            {event.description}
-          </Text>
+          <View style={{ marginBottom: spacing.sm }}>
+            <Text
+              style={[styles.description, { color: theme.subtext, marginBottom: 0 }]}
+              numberOfLines={!descriptionExpanded && isLongDescription ? 3 : undefined}
+            >
+              {event.description}
+            </Text>
+            {isLongDescription ? (
+              <Pressable onPress={() => setDescriptionExpanded((v) => !v)}>
+                <Text style={[styles.readMore, { color: theme.accent }]}>
+                  {descriptionExpanded ? 'Show less' : 'Read more'}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
         ) : null}
         <Text style={[styles.subtitle, { color: theme.subtext }]}>
           Select as many alarms as you need
@@ -145,28 +162,16 @@ export function AlarmSheet({
             {selected.size === 0 ? 'Clear Alarms' : `Save ${selected.size} Alarm${selected.size > 1 ? 's' : ''}`}
           </Text>
         </Pressable>
-      </View>
-    </Modal>
+      </BottomSheetScrollView>
+    </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)' },
-  sheet: {
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    padding: spacing.lg,
-    paddingBottom: spacing.xl,
-  },
-  handle: {
-    width: 40,
-    height: 5,
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginBottom: spacing.md,
-  },
+  scrollContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
   title: { fontSize: 18, fontWeight: '700', marginBottom: spacing.xs },
   description: { fontSize: 14, lineHeight: 19, marginBottom: spacing.sm },
+  readMore: { fontSize: 13, fontWeight: '600', marginTop: spacing.xs },
   subtitle: { fontSize: 13, marginBottom: spacing.md },
   option: {
     borderWidth: 1.5,

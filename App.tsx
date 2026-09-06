@@ -1,5 +1,7 @@
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { EventsScreen } from './src/screens/EventsScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
@@ -16,19 +18,23 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top', 'bottom']}>
-        {accounts === null ? null : accounts.length > 0 ? (
-          <EventsScreen
-            accounts={accounts}
-            onAddAccount={addAccount}
-            onRemoveAccount={removeAccount}
-          />
-        ) : (
-          <LoginScreen isRequestReady={isRequestReady} onSignIn={addAccount} />
-        )}
-        <StatusBar style="auto" />
-      </SafeAreaView>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <BottomSheetModalProvider>
+        <SafeAreaProvider>
+          <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }} edges={['top', 'bottom']}>
+            {accounts === null ? null : accounts.length > 0 ? (
+              <EventsScreen
+                accounts={accounts}
+                onAddAccount={addAccount}
+                onRemoveAccount={removeAccount}
+              />
+            ) : (
+              <LoginScreen isRequestReady={isRequestReady} onSignIn={addAccount} />
+            )}
+            <StatusBar style="auto" />
+          </SafeAreaView>
+        </SafeAreaProvider>
+      </BottomSheetModalProvider>
+    </GestureHandlerRootView>
   );
 }
