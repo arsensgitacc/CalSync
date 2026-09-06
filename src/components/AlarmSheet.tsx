@@ -1,45 +1,105 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { AlarmAnchor, CalendarEvent } from '../types';
+import { AlarmAnchor, AlarmRecord, CalendarEvent } from '../types';
 import { Theme, radius, spacing } from '../theme';
 
-interface OffsetOption {
+interface AnchorOption {
   key: string;
   label: string;
   anchor: AlarmAnchor;
-  minutes: number;
+  offsetMinutes: number;
 }
 
-const OFFSET_OPTIONS: OffsetOption[] = [
-  { key: 'start-0', label: 'At event start', anchor: 'start', minutes: 0 },
-  { key: 'start-5', label: '5 minutes before start', anchor: 'start', minutes: 5 },
-  { key: 'start-10', label: '10 minutes before start', anchor: 'start', minutes: 10 },
-  { key: 'start-15', label: '15 minutes before start', anchor: 'start', minutes: 15 },
-  { key: 'start-30', label: '30 minutes before start', anchor: 'start', minutes: 30 },
-  { key: 'start-60', label: '1 hour before start', anchor: 'start', minutes: 60 },
-  { key: 'end-0', label: 'At event end', anchor: 'end', minutes: 0 },
+interface DurationRow {
+  minutes: number;
+  label: string;
+  before: AnchorOption;
+  after: AnchorOption;
+}
+
+const ANCHOR_OPTIONS: AnchorOption[] = [
+  { key: 'start', label: 'At event start', anchor: 'start', offsetMinutes: 0 },
+  { key: 'end', label: 'At event end', anchor: 'end', offsetMinutes: 0 },
 ];
+
+const DURATIONS = [5, 10, 15, 30, 60];
+
+const DURATION_ROWS: DurationRow[] = DURATIONS.map((minutes) => ({
+  minutes,
+  label: minutes === 60 ? '1 hr' : `${minutes} min`,
+  before: { key: `before-${minutes}`, label: 'before', anchor: 'start', offsetMinutes: minutes },
+  after: { key: `after-${minutes}`, label: 'after', anchor: 'start', offsetMinutes: -minutes },
+}));
+
+const ALL_OPTIONS: AnchorOption[] = [
+  ...ANCHOR_OPTIONS,
+  ...DURATION_ROWS.flatMap((row) => [row.before, row.after]),
+];
+
+function keyForRecord(record: AlarmRecord): string | undefined {
+  return ALL_OPTIONS.find(
+    (o) => o.anchor === record.anchor && o.offsetMinutes === record.offsetMinutes
+  )?.key;
+}
 
 export function AlarmSheet({
   visible,
   event,
-  hasAlarm,
+  existingAlarms,
   theme,
   onClose,
-  onConfirm,
-  onRemove,
+  onSave,
 }: {
   visible: boolean;
   event: CalendarEvent | null;
-  hasAlarm: boolean;
+  existingAlarms: AlarmRecord[];
   theme: Theme;
   onClose: () => void;
-  onConfirm: (anchor: AlarmAnchor, offsetMinutes: number) => void;
-  onRemove: () => void;
+  onSave: (selected: { anchor: AlarmAnchor; offsetMinutes: number }[]) => void;
 }) {
-  const [selectedKey, setSelectedKey] = useState('start-0');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!event) return;
+    const keys = existingAlarms.map(keyForRecord).filter((k): k is string => !!k);
+    setSelected(new Set(keys));
+  }, [event?.id, visible]);
 
   if (!event) return null;
+
+  const toggle = (key: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const renderToggle = (opt: AnchorOption, style?: object) => {
+    const isSelected = selected.has(opt.key);
+    return (
+      <Pressable
+        key={opt.key}
+        onPress={() => toggle(opt.key)}
+        style={[
+          styles.option,
+          { borderColor: theme.border },
+          isSelected && { borderColor: theme.accent, backgroundColor: theme.accent + '15' },
+          style,
+        ]}
+      >
+        <Text
+          style={{
+            color: isSelected ? theme.accent : theme.text,
+            fontWeight: isSelected ? '600' : '400',
+          }}
+        >
+          {opt.label}
+        </Text>
+      </Pressable>
+    );
+  };
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -50,45 +110,36 @@ export function AlarmSheet({
           {event.title}
         </Text>
         <Text style={[styles.subtitle, { color: theme.subtext }]}>
-          Choose when the alarm should go off
+          Select as many alarms as you need
         </Text>
 
-        {OFFSET_OPTIONS.map((opt) => {
-          const isSelected = selectedKey === opt.key;
-          return (
-            <Pressable
-              key={opt.key}
-              onPress={() => setSelectedKey(opt.key)}
-              style={[
-                styles.option,
-                { borderColor: theme.border },
-                isSelected && { borderColor: theme.accent, backgroundColor: theme.accent + '15' },
-              ]}
-            >
-              <Text style={{ color: isSelected ? theme.accent : theme.text, fontWeight: isSelected ? '600' : '400' }}>
-                {opt.label}
-              </Text>
-            </Pressable>
-          );
-        })}
+        {ANCHOR_OPTIONS.map((opt) => renderToggle(opt))}
+
+        {DURATION_ROWS.map((row) => (
+          <View key={row.minutes} style={styles.durationRow}>
+            <Text style={[styles.durationLabel, { color: theme.subtext }]}>{row.label}</Text>
+            <View style={styles.pairRow}>
+              {renderToggle(row.before, styles.pairButton)}
+              {renderToggle(row.after, styles.pairButton)}
+            </View>
+          </View>
+        ))}
 
         <Pressable
-          onPress={() => {
-            const opt = OFFSET_OPTIONS.find((o) => o.key === selectedKey)!;
-            onConfirm(opt.anchor, opt.minutes);
-          }}
+          onPress={() =>
+            onSave(
+              Array.from(selected).map((key) => {
+                const opt = ALL_OPTIONS.find((o) => o.key === key)!;
+                return { anchor: opt.anchor, offsetMinutes: opt.offsetMinutes };
+              })
+            )
+          }
           style={[styles.confirmButton, { backgroundColor: theme.accent }]}
         >
           <Text style={[styles.confirmLabel, { color: theme.accentText }]}>
-            {hasAlarm ? 'Update Alarm' : 'Set Alarm'}
+            {selected.size === 0 ? 'Clear Alarms' : `Save ${selected.size} Alarm${selected.size > 1 ? 's' : ''}`}
           </Text>
         </Pressable>
-
-        {hasAlarm ? (
-          <Pressable onPress={onRemove} style={styles.removeButton}>
-            <Text style={{ color: theme.danger, fontWeight: '600' }}>Remove Alarm</Text>
-          </Pressable>
-        ) : null}
       </View>
     </Modal>
   );
@@ -116,13 +167,17 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
+    alignItems: 'center',
   },
+  durationRow: { marginBottom: spacing.sm },
+  durationLabel: { fontSize: 12, marginBottom: spacing.xs },
+  pairRow: { flexDirection: 'row', gap: spacing.sm },
+  pairButton: { flex: 1, marginBottom: 0 },
   confirmButton: {
     borderRadius: radius.md,
     paddingVertical: spacing.md,
     alignItems: 'center',
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
   },
   confirmLabel: { fontSize: 16, fontWeight: '700' },
-  removeButton: { alignItems: 'center', marginTop: spacing.md },
 });

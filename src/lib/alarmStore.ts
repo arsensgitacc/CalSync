@@ -6,33 +6,36 @@ let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 function getDb() {
   if (!dbPromise) {
     dbPromise = SQLite.openDatabaseAsync('calsync.db').then(async (db) => {
+      const columns = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(alarms);`);
+      const hasOptionKey = columns.some((c) => c.name === 'optionKey');
+      if (columns.length > 0 && !hasOptionKey) {
+        // Older schema (single alarm per event) — safe to drop, nothing real has been scheduled yet.
+        await db.execAsync('DROP TABLE alarms;');
+      }
       await db.execAsync(`
         CREATE TABLE IF NOT EXISTS alarms (
-          eventId TEXT PRIMARY KEY NOT NULL,
+          optionKey TEXT PRIMARY KEY NOT NULL,
+          eventId TEXT NOT NULL,
           alarmId TEXT NOT NULL,
-          anchor TEXT NOT NULL DEFAULT 'start',
+          anchor TEXT NOT NULL,
           offsetMinutes INTEGER NOT NULL,
           fireISO TEXT NOT NULL
         );
+        CREATE INDEX IF NOT EXISTS idx_alarms_eventId ON alarms(eventId);
       `);
-      try {
-        await db.execAsync(`ALTER TABLE alarms ADD COLUMN anchor TEXT NOT NULL DEFAULT 'start';`);
-      } catch {
-        // column already exists
-      }
       return db;
     });
   }
   return dbPromise;
 }
 
-export async function getAlarmForEvent(eventId: string): Promise<AlarmRecord | null> {
+export function makeOptionKey(eventId: string, anchor: string, offsetMinutes: number): string {
+  return `${eventId}:${anchor}:${offsetMinutes}`;
+}
+
+export async function getAlarmsForEvent(eventId: string): Promise<AlarmRecord[]> {
   const db = await getDb();
-  const row = await db.getFirstAsync<AlarmRecord>(
-    'SELECT * FROM alarms WHERE eventId = ?',
-    eventId
-  );
-  return row ?? null;
+  return db.getAllAsync<AlarmRecord>('SELECT * FROM alarms WHERE eventId = ?', eventId);
 }
 
 export async function getAllAlarmRecords(): Promise<AlarmRecord[]> {
@@ -43,13 +46,12 @@ export async function getAllAlarmRecords(): Promise<AlarmRecord[]> {
 export async function saveAlarmRecord(record: AlarmRecord): Promise<void> {
   const db = await getDb();
   await db.runAsync(
-    `INSERT INTO alarms (eventId, alarmId, anchor, offsetMinutes, fireISO)
-     VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT(eventId) DO UPDATE SET
+    `INSERT INTO alarms (optionKey, eventId, alarmId, anchor, offsetMinutes, fireISO)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(optionKey) DO UPDATE SET
        alarmId = excluded.alarmId,
-       anchor = excluded.anchor,
-       offsetMinutes = excluded.offsetMinutes,
        fireISO = excluded.fireISO;`,
+    record.optionKey,
     record.eventId,
     record.alarmId,
     record.anchor,
@@ -58,7 +60,7 @@ export async function saveAlarmRecord(record: AlarmRecord): Promise<void> {
   );
 }
 
-export async function removeAlarmRecord(eventId: string): Promise<void> {
+export async function removeAlarmRecord(optionKey: string): Promise<void> {
   const db = await getDb();
-  await db.runAsync('DELETE FROM alarms WHERE eventId = ?', eventId);
+  await db.runAsync('DELETE FROM alarms WHERE optionKey = ?', optionKey);
 }

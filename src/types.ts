@@ -11,6 +11,7 @@ export interface CalendarEvent {
 export type AlarmAnchor = 'start' | 'end';
 
 export interface AlarmRecord {
+  optionKey: string;
   eventId: string;
   alarmId: string;
   anchor: AlarmAnchor;

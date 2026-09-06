@@ -12,7 +12,12 @@ import {
 import { AlarmSheet } from '../components/AlarmSheet';
 import { EventRow } from '../components/EventRow';
 import { cancelEventAlarm, requestAlarmAuthorization, scheduleEventAlarm } from '../lib/alarmKit';
-import { getAllAlarmRecords, removeAlarmRecord, saveAlarmRecord } from '../lib/alarmStore';
+import {
+  getAllAlarmRecords,
+  makeOptionKey,
+  removeAlarmRecord,
+  saveAlarmRecord,
+} from '../lib/alarmStore';
 import { fetchUpcomingEvents } from '../lib/calendarService';
 import { dayKey, formatDayHeading, getEventEndDate, getEventStartDate } from '../lib/dates';
 import { AlarmAnchor, AlarmRecord, CalendarEvent } from '../types';
@@ -26,7 +31,7 @@ interface Section {
 export function EventsScreen({ onSignOut }: { onSignOut: () => void }) {
   const theme = useTheme();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [alarms, setAlarms] = useState<Record<string, AlarmRecord>>({});
+  const [alarms, setAlarms] = useState<Record<string, AlarmRecord[]>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,8 +39,10 @@ export function EventsScreen({ onSignOut }: { onSignOut: () => void }) {
 
   const loadAlarms = useCallback(async () => {
     const records = await getAllAlarmRecords();
-    const map: Record<string, AlarmRecord> = {};
-    for (const r of records) map[r.eventId] = r;
+    const map: Record<string, AlarmRecord[]> = {};
+    for (const r of records) {
+      (map[r.eventId] ??= []).push(r);
+    }
     setAlarms(map);
   }, []);
 
@@ -68,61 +75,70 @@ export function EventsScreen({ onSignOut }: { onSignOut: () => void }) {
     return Array.from(groups.values());
   }, [events]);
 
-  const handleConfirmAlarm = useCallback(
-    async (anchor: AlarmAnchor, offsetMinutes: number) => {
+  const handleSaveAlarms = useCallback(
+    async (selections: { anchor: AlarmAnchor; offsetMinutes: number }[]) => {
       if (!selectedEvent) return;
+      const event = selectedEvent;
       try {
-        const authorized = await requestAlarmAuthorization();
-        if (!authorized) {
-          Alert.alert('Alarm permission denied', 'Enable alarms for CalSync in Settings.');
-          return;
+        const existing = alarms[event.id] ?? [];
+        const existingByKey = new Map(existing.map((r) => [r.optionKey, r]));
+        const wantedKeys = new Set(
+          selections.map((s) => makeOptionKey(event.id, s.anchor, s.offsetMinutes))
+        );
+
+        if (selections.length > 0) {
+          const authorized = await requestAlarmAuthorization();
+          if (!authorized) {
+            Alert.alert('Alarm permission denied', 'Enable alarms for CalSync in Settings.');
+            return;
+          }
         }
 
-        const existing = alarms[selectedEvent.id];
-        if (existing) {
-          await cancelEventAlarm(existing.alarmId);
+        const toRemove = existing.filter((r) => !wantedKeys.has(r.optionKey));
+        const toAdd = selections.filter(
+          (s) => !existingByKey.has(makeOptionKey(event.id, s.anchor, s.offsetMinutes))
+        );
+
+        await Promise.all(
+          toRemove.map(async (r) => {
+            await cancelEventAlarm(r.alarmId);
+            await removeAlarmRecord(r.optionKey);
+          })
+        );
+
+        const added: AlarmRecord[] = [];
+        for (const s of toAdd) {
+          const anchorDate = s.anchor === 'end' ? getEventEndDate(event) : getEventStartDate(event);
+          const fireDate = new Date(anchorDate.getTime() - s.offsetMinutes * 60_000);
+          const alarmId = await scheduleEventAlarm({
+            eventId: event.id,
+            title: event.title,
+            fireDate,
+          });
+          const record: AlarmRecord = {
+            optionKey: makeOptionKey(event.id, s.anchor, s.offsetMinutes),
+            eventId: event.id,
+            alarmId,
+            anchor: s.anchor,
+            offsetMinutes: s.offsetMinutes,
+            fireISO: fireDate.toISOString(),
+          };
+          await saveAlarmRecord(record);
+          added.push(record);
         }
 
-        const anchorDate =
-          anchor === 'end' ? getEventEndDate(selectedEvent) : getEventStartDate(selectedEvent);
-        const fireDate = new Date(anchorDate.getTime() - offsetMinutes * 60_000);
-        const alarmId = await scheduleEventAlarm({
-          eventId: selectedEvent.id,
-          title: selectedEvent.title,
-          fireDate,
-        });
-
-        const record: AlarmRecord = {
-          eventId: selectedEvent.id,
-          alarmId,
-          anchor,
-          offsetMinutes,
-          fireISO: fireDate.toISOString(),
-        };
-        await saveAlarmRecord(record);
-        setAlarms((prev) => ({ ...prev, [selectedEvent.id]: record }));
+        const removedKeys = new Set(toRemove.map((r) => r.optionKey));
+        setAlarms((prev) => ({
+          ...prev,
+          [event.id]: [...existing.filter((r) => !removedKeys.has(r.optionKey)), ...added],
+        }));
         setSelectedEvent(null);
       } catch (e) {
-        Alert.alert('Could not set alarm', e instanceof Error ? e.message : String(e));
+        Alert.alert('Could not update alarms', e instanceof Error ? e.message : String(e));
       }
     },
     [selectedEvent, alarms]
   );
-
-  const handleRemoveAlarm = useCallback(async () => {
-    if (!selectedEvent) return;
-    const existing = alarms[selectedEvent.id];
-    if (existing) {
-      await cancelEventAlarm(existing.alarmId);
-      await removeAlarmRecord(selectedEvent.id);
-      setAlarms((prev) => {
-        const next = { ...prev };
-        delete next[selectedEvent.id];
-        return next;
-      });
-    }
-    setSelectedEvent(null);
-  }, [selectedEvent, alarms]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -158,7 +174,7 @@ export function EventsScreen({ onSignOut }: { onSignOut: () => void }) {
           renderItem={({ item }) => (
             <EventRow
               event={item}
-              hasAlarm={!!alarms[item.id]}
+              hasAlarm={(alarms[item.id]?.length ?? 0) > 0}
               theme={theme}
               onPress={() => setSelectedEvent(item)}
             />
@@ -173,11 +189,10 @@ export function EventsScreen({ onSignOut }: { onSignOut: () => void }) {
       <AlarmSheet
         visible={!!selectedEvent}
         event={selectedEvent}
-        hasAlarm={!!(selectedEvent && alarms[selectedEvent.id])}
+        existingAlarms={selectedEvent ? alarms[selectedEvent.id] ?? [] : []}
         theme={theme}
         onClose={() => setSelectedEvent(null)}
-        onConfirm={handleConfirmAlarm}
-        onRemove={handleRemoveAlarm}
+        onSave={handleSaveAlarms}
       />
     </View>
   );
