@@ -23,6 +23,16 @@ function getDb() {
         );
         CREATE INDEX IF NOT EXISTS idx_alarms_eventId ON alarms(eventId);
       `);
+
+      const columnsAfterCreate = await db.getAllAsync<{ name: string }>(
+        `PRAGMA table_info(alarms);`
+      );
+      const hasAnchorISO = columnsAfterCreate.some((c) => c.name === 'anchorISO');
+      if (!hasAnchorISO) {
+        // Existing rows get NULL, which reconcileAlarmsWithEvents treats as
+        // "unknown baseline" and backfills on the next sync pass.
+        await db.execAsync('ALTER TABLE alarms ADD COLUMN anchorISO TEXT;');
+      }
       return db;
     });
   }
@@ -46,17 +56,19 @@ export async function getAllAlarmRecords(): Promise<AlarmRecord[]> {
 export async function saveAlarmRecord(record: AlarmRecord): Promise<void> {
   const db = await getDb();
   await db.runAsync(
-    `INSERT INTO alarms (optionKey, eventId, alarmId, anchor, offsetMinutes, fireISO)
-     VALUES (?, ?, ?, ?, ?, ?)
+    `INSERT INTO alarms (optionKey, eventId, alarmId, anchor, offsetMinutes, fireISO, anchorISO)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(optionKey) DO UPDATE SET
        alarmId = excluded.alarmId,
-       fireISO = excluded.fireISO;`,
+       fireISO = excluded.fireISO,
+       anchorISO = excluded.anchorISO;`,
     record.optionKey,
     record.eventId,
     record.alarmId,
     record.anchor,
     record.offsetMinutes,
-    record.fireISO
+    record.fireISO,
+    record.anchorISO
   );
 }
 

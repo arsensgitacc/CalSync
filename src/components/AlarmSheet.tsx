@@ -109,6 +109,11 @@ export function AlarmSheet({
         <Text style={[styles.title, { color: theme.text }]} numberOfLines={2}>
           {event.title}
         </Text>
+        {event.description ? (
+          <Text style={[styles.description, { color: theme.subtext }]}>
+            {event.description}
+          </Text>
+        ) : null}
         <Text style={[styles.subtitle, { color: theme.subtext }]}>
           Select as many alarms as you need
         </Text>
@@ -161,6 +166,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   title: { fontSize: 18, fontWeight: '700', marginBottom: spacing.xs },
+  description: { fontSize: 14, lineHeight: 19, marginBottom: spacing.sm },
   subtitle: { fontSize: 13, marginBottom: spacing.md },
   option: {
     borderWidth: 1.5,

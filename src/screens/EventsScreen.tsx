@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { AccountsSheet } from '../components/AccountsSheet';
 import { AlarmSheet } from '../components/AlarmSheet';
 import { EventRow } from '../components/EventRow';
 import { cancelEventAlarm, requestAlarmAuthorization, scheduleEventAlarm } from '../lib/alarmKit';
@@ -18,9 +19,10 @@ import {
   removeAlarmRecord,
   saveAlarmRecord,
 } from '../lib/alarmStore';
-import { fetchUpcomingEvents } from '../lib/calendarService';
+import { reconcileAlarmsWithEvents } from '../lib/alarmSync';
+import { fetchEventsForAccounts } from '../lib/calendarService';
 import { dayKey, formatDayHeading, getEventEndDate, getEventStartDate } from '../lib/dates';
-import { AlarmAnchor, AlarmRecord, CalendarEvent } from '../types';
+import { AlarmAnchor, AlarmRecord, CalendarEvent, GoogleAccount } from '../types';
 import { spacing, useTheme } from '../theme';
 
 interface Section {
@@ -28,14 +30,24 @@ interface Section {
   data: CalendarEvent[];
 }
 
-export function EventsScreen({ onSignOut }: { onSignOut: () => void }) {
+export function EventsScreen({
+  accounts,
+  onAddAccount,
+  onRemoveAccount,
+}: {
+  accounts: GoogleAccount[];
+  onAddAccount: () => void;
+  onRemoveAccount: (accountId: string) => Promise<void>;
+}) {
   const theme = useTheme();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [alarms, setAlarms] = useState<Record<string, AlarmRecord[]>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [syncWarning, setSyncWarning] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [accountsSheetVisible, setAccountsSheetVisible] = useState(false);
 
   const loadAlarms = useCallback(async () => {
     const records = await getAllAlarmRecords();
@@ -50,18 +62,44 @@ export function EventsScreen({ onSignOut }: { onSignOut: () => void }) {
     isRefresh ? setRefreshing(true) : setLoading(true);
     setError(null);
     try {
-      const [fetched] = await Promise.all([fetchUpcomingEvents(), loadAlarms()]);
+      const [{ events: fetched, cancelledEventIds, failedAccounts }] = await Promise.all([
+        fetchEventsForAccounts(accounts),
+        loadAlarms(),
+      ]);
+      await reconcileAlarmsWithEvents(fetched, cancelledEventIds);
+      await loadAlarms();
       setEvents(fetched);
+      setSyncWarning(
+        failedAccounts.length > 0
+          ? `Couldn't sync: ${failedAccounts.map((a) => a.email).join(', ')}`
+          : null
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to sync calendar.');
     } finally {
       isRefresh ? setRefreshing(false) : setLoading(false);
     }
-  }, [loadAlarms]);
+  }, [loadAlarms, accounts]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  const handleRemoveAccount = useCallback(
+    async (accountId: string) => {
+      const all = await getAllAlarmRecords();
+      const toClean = all.filter((r) => r.eventId.startsWith(`${accountId}:`));
+      await Promise.all(
+        toClean.map(async (r) => {
+          await cancelEventAlarm(r.alarmId);
+          await removeAlarmRecord(r.optionKey);
+        })
+      );
+      await onRemoveAccount(accountId);
+      await loadAlarms();
+    },
+    [onRemoveAccount, loadAlarms]
+  );
 
   const sections = useMemo<Section[]>(() => {
     const groups = new Map<string, Section>();
@@ -122,6 +160,7 @@ export function EventsScreen({ onSignOut }: { onSignOut: () => void }) {
             anchor: s.anchor,
             offsetMinutes: s.offsetMinutes,
             fireISO: fireDate.toISOString(),
+            anchorISO: anchorDate.toISOString(),
           };
           await saveAlarmRecord(record);
           added.push(record);
@@ -144,10 +183,16 @@ export function EventsScreen({ onSignOut }: { onSignOut: () => void }) {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: theme.text }]}>Upcoming</Text>
-        <Pressable onPress={onSignOut}>
-          <Text style={{ color: theme.subtext }}>Sign out</Text>
+        <Pressable onPress={() => setAccountsSheetVisible(true)}>
+          <Text style={{ color: theme.subtext }}>Accounts</Text>
         </Pressable>
       </View>
+
+      {syncWarning ? (
+        <Text style={[styles.syncWarning, { color: theme.danger }]} numberOfLines={2}>
+          {syncWarning}
+        </Text>
+      ) : null}
 
       {loading ? (
         <ActivityIndicator style={{ marginTop: spacing.xl }} />
@@ -194,6 +239,15 @@ export function EventsScreen({ onSignOut }: { onSignOut: () => void }) {
         onClose={() => setSelectedEvent(null)}
         onSave={handleSaveAlarms}
       />
+
+      <AccountsSheet
+        visible={accountsSheetVisible}
+        accounts={accounts}
+        theme={theme}
+        onClose={() => setAccountsSheetVisible(false)}
+        onAddAccount={onAddAccount}
+        onRemoveAccount={handleRemoveAccount}
+      />
     </View>
   );
 }
@@ -209,6 +263,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   headerTitle: { fontSize: 28, fontWeight: '700' },
+  syncWarning: { fontSize: 12, paddingHorizontal: spacing.md, paddingBottom: spacing.xs },
   sectionHeader: { fontSize: 13, fontWeight: '700', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, textTransform: 'uppercase' },
   centerBox: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   errorText: { textAlign: 'center' },

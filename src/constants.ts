@@ -9,5 +9,7 @@ export const OAUTH_SCHEME = 'com.arsenanikyan.calsync';
 
 export const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly';
 
+export const USERINFO_ENDPOINT = 'https://www.googleapis.com/oauth2/v3/userinfo';
+
 // Rolling window of events to sync, in days.
 export const SYNC_WINDOW_DAYS = 30;

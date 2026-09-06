@@ -1,5 +1,12 @@
 {
   "enabledPlugins": {
     "expo@claude-plugins-official": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc --noEmit*)",
+      "Bash(xcrun xctrace list devices*)",
+      "Bash(xcrun devicectl list devices*)"
+    ]
   }
 }

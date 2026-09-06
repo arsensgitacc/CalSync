@@ -15,10 +15,15 @@
 - [x] App scaffolded, Google OAuth wired with a real client ID, Calendar API sync working
 - [x] AlarmKit wrapper integrated and building successfully (native pod, App Groups, entitlements all confirmed via a real device build)
 - [x] Multi-select alarm UI (start/end + before/after per duration) implemented
-- [x] Release (standalone) build installed on the iPhone - no longer needs Metro or a cable to run day-to-day
+- [x] Multi-account support (2026-09-06): add/remove multiple Google accounts, events merged into one list with a per-account color bar, account picker forces Google's chooser (`select_account`), removing an account cleans up its alarms too
+- [x] Reconcile-on-change (2026-09-06): alarms reschedule automatically when an event's time changes, and cancel automatically when an event is deleted - runs on every foreground sync (app open + pull-to-refresh). Known limitation: events that fall outside the 30-day sync window (already started, or pushed further out) aren't touched, to avoid risking cancellation of an alarm about to legitimately fire.
+- [x] Best-effort background reconcile added via `expo-background-task`/`expo-task-manager` - same reconcile logic, but iOS schedules it opportunistically (not guaranteed timing); the foreground reconcile remains the reliable path.
 - [~] Not yet verified: an alarm actually firing end-to-end from a real calendar event with the phone on silent (the core premise of the whole app)
 - [ ] Weekly re-sign reminder is a manual habit, not automated
+- Decision (2026-09-06): CalSync will be open-sourced (MIT), not pursued as a paid App Store app - market research found 10+ closed-source AlarmKit-based competitors already live, none open source. Prep work (scrub committed secrets/personal identifiers, replace boilerplate LICENSE, write README) is planned but not yet started.
 
-**Next steps**: verify a real fired alarm; consider handling event-time changes (currently no reschedule-on-change logic); no remote git repo yet (local commits only).
+**Note on build config**: the last few installs were Debug builds (`npx expo run:ios --device <udid>`, no `--configuration Release`), which need Metro (`npm start`) running to serve JS - this is a step back from the earlier "standalone, no Metro needed" state and was a side effect of iterating quickly on-device. Rebuild with `--configuration Release` when back to day-to-day use without a cable/Metro.
+
+**Next steps**: verify a real fired alarm; verify the background reconcile task actually gets scheduled and run by iOS (`BackgroundTask.triggerTaskWorkerForTestingAsync()` works in debug builds for testing this without waiting on the real OS scheduler); execute the open-source prep work; no remote git repo yet (local commits only).
 
 See also: SecondBrain vault note `02 - Projects/CalSync.md` for the full history.

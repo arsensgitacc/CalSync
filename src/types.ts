@@ -1,10 +1,17 @@
+export interface GoogleAccount {
+  id: string;
+  email: string;
+}
+
 export interface CalendarEvent {
   id: string;
+  accountId: string;
   title: string;
   startISO: string;
   endISO: string | null;
   isAllDay: boolean;
   location: string | null;
+  description: string | null;
   calendarColor: string;
 }
 
@@ -17,4 +24,5 @@ export interface AlarmRecord {
   anchor: AlarmAnchor;
   offsetMinutes: number;
   fireISO: string;
+  anchorISO: string | null;
 }

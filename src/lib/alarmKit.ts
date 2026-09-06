@@ -43,10 +43,12 @@ export async function scheduleEventAlarm(params: {
   if (!ok) {
     throw new Error('AlarmKit refused to schedule the alarm.');
   }
+  console.log(`[alarmKit] scheduled ${id} for ${params.fireDate.toISOString()}`);
   return id;
 }
 
 export async function cancelEventAlarm(alarmId: string): Promise<void> {
   ensureConfigured();
   await ExpoAlarmKit.cancelAlarm(alarmId);
+  console.log(`[alarmKit] cancelled ${alarmId}`);
 }
