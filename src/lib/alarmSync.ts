@@ -1,5 +1,5 @@
-import { cancelEventAlarm, scheduleEventAlarm } from './alarmKit';
-import { getAllAlarmRecords, removeAlarmRecord, saveAlarmRecord } from './alarmStore';
+import { cancelEventAlarm, requestAlarmAuthorization, scheduleEventAlarm } from './alarmKit';
+import { getAllAlarmRecords, makeOptionKey, removeAlarmRecord, saveAlarmRecord } from './alarmStore';
 import { getEventEndDate, getEventStartDate } from './dates';
 import { CalendarEvent } from '../types';
 
@@ -56,6 +56,52 @@ export async function reconcileAlarmsWithEvents(
       );
     } catch (err) {
       console.warn(`[alarmSync] failed to reschedule ${record.optionKey}`, err);
+    }
+  }
+}
+
+const AUTO_ALARM_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Auto-creates a start-time alarm for events that don't have one yet, scoped
+ * to events starting within the next 24 hours (not the whole sync window) so
+ * we don't mass-schedule alarms far in advance. Callers are responsible for
+ * pre-filtering `events` to whichever accounts have auto-alarm enabled - this
+ * function stays decoupled from account concerns.
+ */
+export async function applyAutoAlarms(events: CalendarEvent[]): Promise<void> {
+  const now = Date.now();
+  const candidates = events.filter((e) => {
+    if (e.isAllDay) return false;
+    const startMs = getEventStartDate(e).getTime();
+    return startMs >= now && startMs <= now + AUTO_ALARM_WINDOW_MS;
+  });
+  if (candidates.length === 0) return;
+
+  const records = await getAllAlarmRecords();
+  const existingKeys = new Set(records.map((r) => r.optionKey));
+  const toSchedule = candidates.filter((e) => !existingKeys.has(makeOptionKey(e.id, 'start', 0)));
+  if (toSchedule.length === 0) return;
+
+  const authorized = await requestAlarmAuthorization();
+  if (!authorized) return;
+
+  for (const event of toSchedule) {
+    try {
+      const fireDate = getEventStartDate(event);
+      const alarmId = await scheduleEventAlarm({ eventId: event.id, title: event.title, fireDate });
+      await saveAlarmRecord({
+        optionKey: makeOptionKey(event.id, 'start', 0),
+        eventId: event.id,
+        alarmId,
+        anchor: 'start',
+        offsetMinutes: 0,
+        fireISO: fireDate.toISOString(),
+        anchorISO: fireDate.toISOString(),
+      });
+      console.log(`[alarmSync] auto-created alarm for "${event.title}" at ${fireDate.toISOString()}`);
+    } catch (err) {
+      console.warn('[alarmSync] failed to auto-create alarm for event', event.id, err);
     }
   }
 }

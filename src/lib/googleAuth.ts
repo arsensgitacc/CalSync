@@ -83,6 +83,16 @@ export async function getValidAccessToken(accountId: string): Promise<string> {
   return result.accessToken;
 }
 
+export async function setAccountAutoAlarm(
+  accountId: string,
+  autoAlarm: boolean
+): Promise<GoogleAccount[]> {
+  const accounts = await getAccounts();
+  const next = accounts.map((a) => (a.id === accountId ? { ...a, autoAlarm } : a));
+  await saveAccounts(next);
+  return next;
+}
+
 export async function removeAccount(accountId: string): Promise<void> {
   const refreshToken = await getStoredRefreshToken(accountId);
   if (refreshToken) {
@@ -162,10 +172,16 @@ export function useGoogleAccounts() {
     setAccounts((prev) => (prev ?? []).filter((a) => a.id !== accountId));
   }, []);
 
+  const toggleAutoAlarm = useCallback(async (accountId: string, autoAlarm: boolean) => {
+    const next = await setAccountAutoAlarm(accountId, autoAlarm);
+    setAccounts(next);
+  }, []);
+
   return {
     accounts,
     isRequestReady: !!request,
     addAccount,
     removeAccount: removeAccountAndUpdate,
+    toggleAutoAlarm,
   };
 }

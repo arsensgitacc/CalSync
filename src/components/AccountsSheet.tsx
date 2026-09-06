@@ -12,6 +12,7 @@ export function AccountsSheet({
   onClose,
   onAddAccount,
   onRemoveAccount,
+  onToggleAutoAlarm,
 }: {
   visible: boolean;
   accounts: GoogleAccount[];
@@ -19,6 +20,7 @@ export function AccountsSheet({
   onClose: () => void;
   onAddAccount: () => void;
   onRemoveAccount: (accountId: string) => void;
+  onToggleAutoAlarm: (accountId: string, autoAlarm: boolean) => void;
 }) {
   return (
     <BottomSheet visible={visible} onClose={onClose} theme={theme}>
@@ -30,6 +32,16 @@ export function AccountsSheet({
             <Text style={{ color: theme.text, flex: 1 }} numberOfLines={1}>
               {account.email}
             </Text>
+            <Pressable
+              onPress={() => onToggleAutoAlarm(account.id, !account.autoAlarm)}
+              hitSlop={8}
+              style={styles.bellButton}
+              accessibilityLabel={`Auto-alarm ${account.autoAlarm ? 'on' : 'off'} for ${account.email}`}
+            >
+              <Text style={{ color: account.autoAlarm ? theme.bellOn : theme.bellOff }}>
+                {account.autoAlarm ? '🔔' : '🔕'}
+              </Text>
+            </Pressable>
             <Pressable onPress={() => onRemoveAccount(account.id)} hitSlop={8}>
               <Text style={{ color: theme.danger }}>Remove</Text>
             </Pressable>
@@ -55,6 +67,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
+  bellButton: { marginHorizontal: spacing.sm },
   addButton: {
     borderWidth: 1.5,
     borderRadius: radius.md,

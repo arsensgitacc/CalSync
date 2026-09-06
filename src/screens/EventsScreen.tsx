@@ -20,7 +20,7 @@ import {
   removeAlarmRecord,
   saveAlarmRecord,
 } from '../lib/alarmStore';
-import { reconcileAlarmsWithEvents } from '../lib/alarmSync';
+import { applyAutoAlarms, reconcileAlarmsWithEvents } from '../lib/alarmSync';
 import { fetchEventsForAccounts } from '../lib/calendarService';
 import { dayKey, formatDayHeading, getEventEndDate, getEventStartDate } from '../lib/dates';
 import { AlarmAnchor, AlarmRecord, CalendarEvent, GoogleAccount } from '../types';
@@ -35,10 +35,12 @@ export function EventsScreen({
   accounts,
   onAddAccount,
   onRemoveAccount,
+  onToggleAutoAlarm,
 }: {
   accounts: GoogleAccount[];
   onAddAccount: () => void;
   onRemoveAccount: (accountId: string) => Promise<void>;
+  onToggleAutoAlarm: (accountId: string, autoAlarm: boolean) => Promise<void>;
 }) {
   const theme = useTheme();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -69,6 +71,16 @@ export function EventsScreen({
         loadAlarms(),
       ]);
       await reconcileAlarmsWithEvents(fetched, cancelledEventIds);
+      try {
+        const autoAlarmAccountIds = new Set(
+          accounts.filter((a) => a.autoAlarm).map((a) => a.id)
+        );
+        if (autoAlarmAccountIds.size > 0) {
+          await applyAutoAlarms(fetched.filter((e) => autoAlarmAccountIds.has(e.accountId)));
+        }
+      } catch (err) {
+        console.warn('[EventsScreen] applyAutoAlarms failed', err);
+      }
       await loadAlarms();
       setEvents(fetched);
       setSyncWarning(
@@ -101,6 +113,21 @@ export function EventsScreen({
       await loadAlarms();
     },
     [onRemoveAccount, loadAlarms]
+  );
+
+  const handleToggleAutoAlarm = useCallback(
+    async (accountId: string, autoAlarm: boolean) => {
+      await onToggleAutoAlarm(accountId, autoAlarm);
+      if (autoAlarm) {
+        try {
+          await applyAutoAlarms(events.filter((e) => e.accountId === accountId));
+          await loadAlarms();
+        } catch (err) {
+          console.warn('[EventsScreen] immediate applyAutoAlarms failed', err);
+        }
+      }
+    },
+    [onToggleAutoAlarm, events, loadAlarms]
   );
 
   const sections = useMemo<Section[]>(() => {
@@ -254,6 +281,7 @@ export function EventsScreen({
         onClose={() => setAccountsSheetVisible(false)}
         onAddAccount={onAddAccount}
         onRemoveAccount={handleRemoveAccount}
+        onToggleAutoAlarm={handleToggleAutoAlarm}
       />
 
       <AllAlarmsSheet

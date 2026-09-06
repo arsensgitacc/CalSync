@@ -1,6 +1,7 @@
 export interface GoogleAccount {
   id: string;
   email: string;
+  autoAlarm?: boolean;
 }
 
 export interface CalendarEvent {

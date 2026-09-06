@@ -11,7 +11,8 @@ import { useTheme } from './src/theme';
 
 export default function App() {
   const theme = useTheme();
-  const { accounts, isRequestReady, addAccount, removeAccount } = useGoogleAccounts();
+  const { accounts, isRequestReady, addAccount, removeAccount, toggleAutoAlarm } =
+    useGoogleAccounts();
 
   useEffect(() => {
     registerBackgroundSync().catch((err) => console.warn('[backgroundSync] registration failed', err));
@@ -27,6 +28,7 @@ export default function App() {
                 accounts={accounts}
                 onAddAccount={addAccount}
                 onRemoveAccount={removeAccount}
+                onToggleAutoAlarm={toggleAutoAlarm}
               />
             ) : (
               <LoginScreen isRequestReady={isRequestReady} onSignIn={addAccount} />
