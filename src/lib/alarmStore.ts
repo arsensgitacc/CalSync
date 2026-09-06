@@ -10,10 +10,16 @@ function getDb() {
         CREATE TABLE IF NOT EXISTS alarms (
           eventId TEXT PRIMARY KEY NOT NULL,
           alarmId TEXT NOT NULL,
+          anchor TEXT NOT NULL DEFAULT 'start',
           offsetMinutes INTEGER NOT NULL,
           fireISO TEXT NOT NULL
         );
       `);
+      try {
+        await db.execAsync(`ALTER TABLE alarms ADD COLUMN anchor TEXT NOT NULL DEFAULT 'start';`);
+      } catch {
+        // column already exists
+      }
       return db;
     });
   }
@@ -37,14 +43,16 @@ export async function getAllAlarmRecords(): Promise<AlarmRecord[]> {
 export async function saveAlarmRecord(record: AlarmRecord): Promise<void> {
   const db = await getDb();
   await db.runAsync(
-    `INSERT INTO alarms (eventId, alarmId, offsetMinutes, fireISO)
-     VALUES (?, ?, ?, ?)
+    `INSERT INTO alarms (eventId, alarmId, anchor, offsetMinutes, fireISO)
+     VALUES (?, ?, ?, ?, ?)
      ON CONFLICT(eventId) DO UPDATE SET
        alarmId = excluded.alarmId,
+       anchor = excluded.anchor,
        offsetMinutes = excluded.offsetMinutes,
        fireISO = excluded.fireISO;`,
     record.eventId,
     record.alarmId,
+    record.anchor,
     record.offsetMinutes,
     record.fireISO
   );

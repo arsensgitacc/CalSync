@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { CalendarEvent } from '../types';
+import { AlarmAnchor, CalendarEvent } from '../types';
 import { Theme, radius, spacing } from '../theme';
 
-const OFFSET_OPTIONS = [
-  { label: 'At event time', minutes: 0 },
-  { label: '5 minutes before', minutes: 5 },
-  { label: '10 minutes before', minutes: 10 },
-  { label: '15 minutes before', minutes: 15 },
-  { label: '30 minutes before', minutes: 30 },
-  { label: '1 hour before', minutes: 60 },
+interface OffsetOption {
+  key: string;
+  label: string;
+  anchor: AlarmAnchor;
+  minutes: number;
+}
+
+const OFFSET_OPTIONS: OffsetOption[] = [
+  { key: 'start-0', label: 'At event start', anchor: 'start', minutes: 0 },
+  { key: 'start-5', label: '5 minutes before start', anchor: 'start', minutes: 5 },
+  { key: 'start-10', label: '10 minutes before start', anchor: 'start', minutes: 10 },
+  { key: 'start-15', label: '15 minutes before start', anchor: 'start', minutes: 15 },
+  { key: 'start-30', label: '30 minutes before start', anchor: 'start', minutes: 30 },
+  { key: 'start-60', label: '1 hour before start', anchor: 'start', minutes: 60 },
+  { key: 'end-0', label: 'At event end', anchor: 'end', minutes: 0 },
 ];
 
 export function AlarmSheet({
@@ -26,10 +34,10 @@ export function AlarmSheet({
   hasAlarm: boolean;
   theme: Theme;
   onClose: () => void;
-  onConfirm: (offsetMinutes: number) => void;
+  onConfirm: (anchor: AlarmAnchor, offsetMinutes: number) => void;
   onRemove: () => void;
 }) {
-  const [selected, setSelected] = useState(0);
+  const [selectedKey, setSelectedKey] = useState('start-0');
 
   if (!event) return null;
 
@@ -46,11 +54,11 @@ export function AlarmSheet({
         </Text>
 
         {OFFSET_OPTIONS.map((opt) => {
-          const isSelected = selected === opt.minutes;
+          const isSelected = selectedKey === opt.key;
           return (
             <Pressable
-              key={opt.minutes}
-              onPress={() => setSelected(opt.minutes)}
+              key={opt.key}
+              onPress={() => setSelectedKey(opt.key)}
               style={[
                 styles.option,
                 { borderColor: theme.border },
@@ -65,7 +73,10 @@ export function AlarmSheet({
         })}
 
         <Pressable
-          onPress={() => onConfirm(selected)}
+          onPress={() => {
+            const opt = OFFSET_OPTIONS.find((o) => o.key === selectedKey)!;
+            onConfirm(opt.anchor, opt.minutes);
+          }}
           style={[styles.confirmButton, { backgroundColor: theme.accent }]}
         >
           <Text style={[styles.confirmLabel, { color: theme.accentText }]}>

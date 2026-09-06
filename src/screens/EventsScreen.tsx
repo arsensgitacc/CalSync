@@ -14,8 +14,8 @@ import { EventRow } from '../components/EventRow';
 import { cancelEventAlarm, requestAlarmAuthorization, scheduleEventAlarm } from '../lib/alarmKit';
 import { getAllAlarmRecords, removeAlarmRecord, saveAlarmRecord } from '../lib/alarmStore';
 import { fetchUpcomingEvents } from '../lib/calendarService';
-import { dayKey, formatDayHeading, getEventStartDate } from '../lib/dates';
-import { AlarmRecord, CalendarEvent } from '../types';
+import { dayKey, formatDayHeading, getEventEndDate, getEventStartDate } from '../lib/dates';
+import { AlarmAnchor, AlarmRecord, CalendarEvent } from '../types';
 import { spacing, useTheme } from '../theme';
 
 interface Section {
@@ -69,7 +69,7 @@ export function EventsScreen({ onSignOut }: { onSignOut: () => void }) {
   }, [events]);
 
   const handleConfirmAlarm = useCallback(
-    async (offsetMinutes: number) => {
+    async (anchor: AlarmAnchor, offsetMinutes: number) => {
       if (!selectedEvent) return;
       try {
         const authorized = await requestAlarmAuthorization();
@@ -83,9 +83,9 @@ export function EventsScreen({ onSignOut }: { onSignOut: () => void }) {
           await cancelEventAlarm(existing.alarmId);
         }
 
-        const fireDate = new Date(
-          getEventStartDate(selectedEvent).getTime() - offsetMinutes * 60_000
-        );
+        const anchorDate =
+          anchor === 'end' ? getEventEndDate(selectedEvent) : getEventStartDate(selectedEvent);
+        const fireDate = new Date(anchorDate.getTime() - offsetMinutes * 60_000);
         const alarmId = await scheduleEventAlarm({
           eventId: selectedEvent.id,
           title: selectedEvent.title,
@@ -95,6 +95,7 @@ export function EventsScreen({ onSignOut }: { onSignOut: () => void }) {
         const record: AlarmRecord = {
           eventId: selectedEvent.id,
           alarmId,
+          anchor,
           offsetMinutes,
           fireISO: fireDate.toISOString(),
         };

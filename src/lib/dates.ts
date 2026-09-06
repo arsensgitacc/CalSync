@@ -10,6 +10,15 @@ export function getEventStartDate(event: CalendarEvent): Date {
   return new Date(year, (month ?? 1) - 1, day ?? 1, ALL_DAY_DEFAULT_HOUR, 0, 0);
 }
 
+/** Resolves an event's end into a concrete local Date, falling back to its start if there's no end. */
+export function getEventEndDate(event: CalendarEvent): Date {
+  if (!event.endISO) return getEventStartDate(event);
+  if (!event.isAllDay) return new Date(event.endISO);
+
+  const [year, month, day] = event.endISO.split('-').map(Number);
+  return new Date(year, (month ?? 1) - 1, day ?? 1, ALL_DAY_DEFAULT_HOUR, 0, 0);
+}
+
 export function formatDayHeading(iso: string, isAllDay: boolean): string {
   const date = isAllDay ? new Date(`${iso}T00:00:00`) : new Date(iso);
   const today = new Date();

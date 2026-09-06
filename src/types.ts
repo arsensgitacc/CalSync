@@ -8,9 +8,12 @@ export interface CalendarEvent {
   calendarColor: string;
 }
 
+export type AlarmAnchor = 'start' | 'end';
+
 export interface AlarmRecord {
   eventId: string;
   alarmId: string;
+  anchor: AlarmAnchor;
   offsetMinutes: number;
   fireISO: string;
 }
