@@ -10,7 +10,7 @@ Sideloaded with a free Apple ID (no paid Apple Developer account needed).
 
 - **Alarms**: uses Apple's [AlarmKit](https://developer.apple.com/documentation/alarmkit)
   (new in iOS 26) via the community wrapper
-  [`expo-alarm-kit`](https://github.com/search?q=expo-alarm-kit), which grants
+  [`expo-alarm-kit`](https://github.com/nickdeupree/expo-alarm-kit), which grants
   real Clock-app alarm privileges — no paid account, no App Store review.
 - **Calendar sync**: read-only Google Calendar access via OAuth (PKCE, no
   client secret) using `expo-auth-session`.
