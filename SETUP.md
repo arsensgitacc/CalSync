@@ -14,7 +14,7 @@ The app can't talk to your Google Calendar until you create an OAuth client for 
 4. **APIs & Services > Credentials > Create Credentials > OAuth client ID**:
    - Application type: **iOS**.
    - Bundle ID: `com.arsenanikyan.calsync` (must match exactly).
-5. Copy the generated Client ID (looks like `xxxxxxxx.apps.googleusercontent.com`) into `src/constants.ts`, replacing `REPLACE_ME.apps.googleusercontent.com`.
+5. Copy `.env.example` to `.env`, and paste the generated Client ID (looks like `xxxxxxxx.apps.googleusercontent.com`) in as `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`. `.env` is gitignored, so this stays local to you.
 
 The first time you sign in on the phone, you'll see an "unverified app" warning screen from Google — tap **Advanced > Go to CalSync (unsafe)** to continue. This is expected and safe here since it's your own app and your own Google account.
 

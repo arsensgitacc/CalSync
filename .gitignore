@@ -33,7 +33,8 @@ yarn-error.*
 # IDE
 .idea/
 
-# local env files
+# local env files (holds your personal Google OAuth client ID - see .env.example)
+.env
 .env*.local
 
 # typescript

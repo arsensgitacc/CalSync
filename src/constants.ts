@@ -1,7 +1,6 @@
-// Fill this in after creating an OAuth 2.0 "iOS" client in Google Cloud Console.
-// See SETUP.md for the exact steps.
-export const GOOGLE_IOS_CLIENT_ID =
-  '1026884705839-fv9csbn7j2r2pb9s32b2csbhohr0od3f.apps.googleusercontent.com';
+// Set via EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID in .env (copy .env.example to .env).
+// See SETUP.md for how to create this OAuth 2.0 "iOS" client in Google Cloud Console.
+export const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? '';
 
 export const APP_GROUP_ID = 'group.com.arsenanikyan.calsync';
 
