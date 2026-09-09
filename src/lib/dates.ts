@@ -1,3 +1,4 @@
+import i18n, { getLocaleTag } from '../i18n';
 import { CalendarEvent } from '../types';
 
 const ALL_DAY_DEFAULT_HOUR = 9;
@@ -27,9 +28,9 @@ export function formatDayHeading(iso: string, isAllDay: boolean): string {
   tomorrow.setDate(today.getDate() + 1);
   const isTomorrow = date.toDateString() === tomorrow.toDateString();
 
-  if (isToday) return 'Today';
-  if (isTomorrow) return 'Tomorrow';
-  return date.toLocaleDateString(undefined, {
+  if (isToday) return i18n.t('common.today');
+  if (isTomorrow) return i18n.t('common.tomorrow');
+  return date.toLocaleDateString(getLocaleTag(), {
     weekday: 'long',
     month: 'long',
     day: 'numeric',

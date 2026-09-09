@@ -1,5 +1,7 @@
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { TFunction } from 'i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BottomSheet } from './BottomSheet';
 import { AlarmAnchor, AlarmRecord, CalendarEvent } from '../types';
@@ -19,27 +21,45 @@ interface DurationRow {
   after: AnchorOption;
 }
 
-const ANCHOR_OPTIONS: AnchorOption[] = [
-  { key: 'start', label: 'At event start', anchor: 'start', offsetMinutes: 0 },
-  { key: 'end', label: 'At event end', anchor: 'end', offsetMinutes: 0 },
-];
-
 const DURATIONS = [5, 10, 15, 30, 60];
 
-const DURATION_ROWS: DurationRow[] = DURATIONS.map((minutes) => ({
-  minutes,
-  label: minutes === 60 ? '1 hr' : `${minutes} min`,
-  before: { key: `before-${minutes}`, label: 'before', anchor: 'start', offsetMinutes: minutes },
-  after: { key: `after-${minutes}`, label: 'after', anchor: 'start', offsetMinutes: -minutes },
-}));
+function formatDuration(t: TFunction, minutes: number): string {
+  return minutes === 60 ? t('common.durationHour') : t('common.durationMinutes', { count: minutes });
+}
 
-const ALL_OPTIONS: AnchorOption[] = [
-  ...ANCHOR_OPTIONS,
-  ...DURATION_ROWS.flatMap((row) => [row.before, row.after]),
-];
+function buildOptions(t: TFunction) {
+  const anchorOptions: AnchorOption[] = [
+    { key: 'start', label: t('alarmSheet.atStart'), anchor: 'start', offsetMinutes: 0 },
+    { key: 'end', label: t('alarmSheet.atEnd'), anchor: 'end', offsetMinutes: 0 },
+  ];
 
-function keyForRecord(record: AlarmRecord): string | undefined {
-  return ALL_OPTIONS.find(
+  const durationRows: DurationRow[] = DURATIONS.map((minutes) => ({
+    minutes,
+    label: formatDuration(t, minutes),
+    before: {
+      key: `before-${minutes}`,
+      label: t('common.before'),
+      anchor: 'start',
+      offsetMinutes: minutes,
+    },
+    after: {
+      key: `after-${minutes}`,
+      label: t('common.after'),
+      anchor: 'start',
+      offsetMinutes: -minutes,
+    },
+  }));
+
+  const allOptions: AnchorOption[] = [
+    ...anchorOptions,
+    ...durationRows.flatMap((row) => [row.before, row.after]),
+  ];
+
+  return { anchorOptions, durationRows, allOptions };
+}
+
+function keyForRecord(allOptions: AnchorOption[], record: AlarmRecord): string | undefined {
+  return allOptions.find(
     (o) => o.anchor === record.anchor && o.offsetMinutes === record.offsetMinutes
   )?.key;
 }
@@ -59,15 +79,17 @@ export function AlarmSheet({
   onClose: () => void;
   onSave: (selected: { anchor: AlarmAnchor; offsetMinutes: number }[]) => void;
 }) {
+  const { t } = useTranslation();
+  const { anchorOptions, durationRows, allOptions } = useMemo(() => buildOptions(t), [t]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   useEffect(() => {
     if (!event) return;
-    const keys = existingAlarms.map(keyForRecord).filter((k): k is string => !!k);
+    const keys = existingAlarms.map((r) => keyForRecord(allOptions, r)).filter((k): k is string => !!k);
     setSelected(new Set(keys));
     setDescriptionExpanded(false);
-  }, [event?.id, visible]);
+  }, [event?.id, visible, allOptions]);
 
   if (!event) return null;
 
@@ -125,19 +147,19 @@ export function AlarmSheet({
             {isLongDescription ? (
               <Pressable onPress={() => setDescriptionExpanded((v) => !v)}>
                 <Text style={[styles.readMore, { color: theme.accent }]}>
-                  {descriptionExpanded ? 'Show less' : 'Read more'}
+                  {descriptionExpanded ? t('alarmSheet.showLess') : t('alarmSheet.readMore')}
                 </Text>
               </Pressable>
             ) : null}
           </View>
         ) : null}
         <Text style={[styles.subtitle, { color: theme.subtext }]}>
-          Select as many alarms as you need
+          {t('alarmSheet.selectPrompt')}
         </Text>
 
-        {ANCHOR_OPTIONS.map((opt) => renderToggle(opt))}
+        {anchorOptions.map((opt) => renderToggle(opt))}
 
-        {DURATION_ROWS.map((row) => (
+        {durationRows.map((row) => (
           <View key={row.minutes} style={styles.durationRow}>
             <Text style={[styles.durationLabel, { color: theme.subtext }]}>{row.label}</Text>
             <View style={styles.pairRow}>
@@ -151,7 +173,7 @@ export function AlarmSheet({
           onPress={() =>
             onSave(
               Array.from(selected).map((key) => {
-                const opt = ALL_OPTIONS.find((o) => o.key === key)!;
+                const opt = allOptions.find((o) => o.key === key)!;
                 return { anchor: opt.anchor, offsetMinutes: opt.offsetMinutes };
               })
             )
@@ -159,7 +181,9 @@ export function AlarmSheet({
           style={[styles.confirmButton, { backgroundColor: theme.accent }]}
         >
           <Text style={[styles.confirmLabel, { color: theme.accentText }]}>
-            {selected.size === 0 ? 'Clear Alarms' : `Save ${selected.size} Alarm${selected.size > 1 ? 's' : ''}`}
+            {selected.size === 0
+              ? t('alarmSheet.clearAlarms')
+              : t('alarmSheet.saveAlarms', { count: selected.size })}
           </Text>
         </Pressable>
       </BottomSheetScrollView>

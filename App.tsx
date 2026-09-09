@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import './src/i18n';
 import { EventsScreen } from './src/screens/EventsScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { registerBackgroundSync } from './src/lib/backgroundSync';

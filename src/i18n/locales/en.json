@@ -1,0 +1,54 @@
+{
+  "common": {
+    "remove": "Remove",
+    "tryAgain": "Try again",
+    "accounts": "Accounts",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "allDay": "All day",
+    "before": "before",
+    "after": "after",
+    "on": "on",
+    "off": "off",
+    "durationHour": "1 hr",
+    "durationMinutes": "{{count}} min"
+  },
+  "login": {
+    "subtitle": "Sync your Google Calendar and set real alarms for the events that matter.",
+    "signIn": "Sign in with Google"
+  },
+  "events": {
+    "title": "Upcoming",
+    "alarmsButton": "Alarms",
+    "noEvents": "No upcoming events in the next 30 days.",
+    "syncFailed": "Couldn't sync: {{emails}}",
+    "genericError": "Failed to sync calendar.",
+    "alarmPermissionDeniedTitle": "Alarm permission denied",
+    "alarmPermissionDeniedMessage": "Enable alarms for CalSync in Settings.",
+    "updateAlarmsErrorTitle": "Could not update alarms"
+  },
+  "alarmSheet": {
+    "atStart": "At event start",
+    "atEnd": "At event end",
+    "selectPrompt": "Select as many alarms as you need",
+    "readMore": "Read more",
+    "showLess": "Show less",
+    "clearAlarms": "Clear Alarms",
+    "saveAlarms_one": "Save {{count}} Alarm",
+    "saveAlarms_other": "Save {{count}} Alarms"
+  },
+  "accountsSheet": {
+    "addAccount": "+ Add another account",
+    "autoAlarmLabel": "Auto-alarm {{state}} for {{email}}"
+  },
+  "allAlarmsSheet": {
+    "title": "All Alarms",
+    "noAlarms": "No alarms scheduled.",
+    "eventNotFound": "(event not found - deleted or outside sync window)",
+    "unrecognizedSection": "Unrecognized alarms (not linked to any event in this app)",
+    "offsetBefore": "{{duration}} before {{anchor}}",
+    "offsetAfter": "{{duration}} after {{anchor}}",
+    "anchorStart": "start",
+    "anchorEnd": "end"
+  }
+}

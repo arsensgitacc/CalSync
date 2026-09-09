@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme, spacing, radius } from '../theme';
 
@@ -10,14 +11,13 @@ export function LoginScreen({
   onSignIn: () => void;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <Text style={styles.logo}>📅</Text>
       <Text style={[styles.title, { color: theme.text }]}>CalSync</Text>
-      <Text style={[styles.subtitle, { color: theme.subtext }]}>
-        Sync your Google Calendar and set real alarms for the events that matter.
-      </Text>
+      <Text style={[styles.subtitle, { color: theme.subtext }]}>{t('login.subtitle')}</Text>
 
       {isRequestReady ? (
         <Pressable
@@ -25,7 +25,7 @@ export function LoginScreen({
           style={[styles.button, { backgroundColor: theme.accent }]}
         >
           <Text style={[styles.buttonLabel, { color: theme.accentText }]}>
-            Sign in with Google
+            {t('login.signIn')}
           </Text>
         </Pressable>
       ) : (

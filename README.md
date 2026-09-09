@@ -25,6 +25,8 @@ Sideloaded with a free Apple ID (no paid Apple Developer account needed).
   list with a per-account color bar.
 - **Auto-alarm**: optionally flag an account so its events automatically
   get a start-time alarm as they enter the next 24 hours.
+- **Localization**: English and Russian, auto-detected from the device's
+  language (`i18next`/`react-i18next`, `src/i18n/locales/`).
 
 ## Requirements
 

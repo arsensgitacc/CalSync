@@ -1,19 +1,29 @@
 import { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { TFunction } from 'i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BottomSheet } from './BottomSheet';
+import { getLocaleTag } from '../i18n';
 import { cancelEventAlarm, getAllNativeAlarmIds } from '../lib/alarmKit';
 import { getAllAlarmRecords, removeAlarmRecord } from '../lib/alarmStore';
 import { AlarmAnchor, AlarmRecord, CalendarEvent } from '../types';
 import { Theme, radius, spacing } from '../theme';
 
-function describeAlarm(anchor: AlarmAnchor, offsetMinutes: number): string {
-  const anchorLabel = anchor === 'end' ? 'end' : 'start';
-  if (offsetMinutes === 0) return `At event ${anchorLabel}`;
+function describeAlarm(
+  t: TFunction,
+  anchorType: AlarmAnchor,
+  offsetMinutes: number
+): string {
+  if (offsetMinutes === 0) {
+    return t(anchorType === 'end' ? 'alarmSheet.atEnd' : 'alarmSheet.atStart');
+  }
   const minutes = Math.abs(offsetMinutes);
-  const durationLabel = minutes === 60 ? '1 hr' : `${minutes} min`;
-  const direction = offsetMinutes > 0 ? 'before' : 'after';
-  return `${durationLabel} ${direction} ${anchorLabel}`;
+  const duration = minutes === 60 ? t('common.durationHour') : t('common.durationMinutes', { count: minutes });
+  const anchor = t(anchorType === 'end' ? 'allAlarmsSheet.anchorEnd' : 'allAlarmsSheet.anchorStart');
+  return offsetMinutes > 0
+    ? t('allAlarmsSheet.offsetBefore', { duration, anchor })
+    : t('allAlarmsSheet.offsetAfter', { duration, anchor });
 }
 
 export function AllAlarmsSheet({
@@ -29,6 +39,7 @@ export function AllAlarmsSheet({
   onClose: () => void;
   onChanged: () => void;
 }) {
+  const { t } = useTranslation();
   const [records, setRecords] = useState<AlarmRecord[]>([]);
   const [orphanIds, setOrphanIds] = useState<string[]>([]);
 
@@ -61,10 +72,10 @@ export function AllAlarmsSheet({
   return (
     <BottomSheet visible={visible} onClose={onClose} theme={theme}>
       <BottomSheetScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={[styles.title, { color: theme.text }]}>All Alarms</Text>
+        <Text style={[styles.title, { color: theme.text }]}>{t('allAlarmsSheet.title')}</Text>
 
         {records.length === 0 && orphanIds.length === 0 ? (
-          <Text style={{ color: theme.subtext }}>No alarms scheduled.</Text>
+          <Text style={{ color: theme.subtext }}>{t('allAlarmsSheet.noAlarms')}</Text>
         ) : null}
 
         {records.map((record) => {
@@ -73,11 +84,11 @@ export function AllAlarmsSheet({
             <View key={record.optionKey} style={[styles.row, { borderColor: theme.border }]}>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: theme.text, fontWeight: '600' }} numberOfLines={1}>
-                  {event?.title ?? '(event not found - deleted or outside sync window)'}
+                  {event?.title ?? t('allAlarmsSheet.eventNotFound')}
                 </Text>
                 <Text style={{ color: theme.subtext, fontSize: 12 }}>
-                  {describeAlarm(record.anchor, record.offsetMinutes)} ·{' '}
-                  {new Date(record.fireISO).toLocaleString(undefined, {
+                  {describeAlarm(t, record.anchor, record.offsetMinutes)} ·{' '}
+                  {new Date(record.fireISO).toLocaleString(getLocaleTag(), {
                     month: 'short',
                     day: 'numeric',
                     hour: 'numeric',
@@ -86,7 +97,7 @@ export function AllAlarmsSheet({
                 </Text>
               </View>
               <Pressable onPress={() => removeTracked(record)} hitSlop={8}>
-                <Text style={{ color: theme.danger }}>Remove</Text>
+                <Text style={{ color: theme.danger }}>{t('common.remove')}</Text>
               </Pressable>
             </View>
           );
@@ -95,7 +106,7 @@ export function AllAlarmsSheet({
         {orphanIds.length > 0 ? (
           <>
             <Text style={[styles.sectionLabel, { color: theme.danger }]}>
-              Unrecognized alarms (not linked to any event in this app)
+              {t('allAlarmsSheet.unrecognizedSection')}
             </Text>
             {orphanIds.map((id) => (
               <View key={id} style={[styles.row, { borderColor: theme.danger }]}>
@@ -103,7 +114,7 @@ export function AllAlarmsSheet({
                   {id}
                 </Text>
                 <Pressable onPress={() => removeOrphan(id)} hitSlop={8}>
-                  <Text style={{ color: theme.danger }}>Remove</Text>
+                  <Text style={{ color: theme.danger }}>{t('common.remove')}</Text>
                 </Pressable>
               </View>
             ))}

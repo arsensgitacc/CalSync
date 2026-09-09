@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
@@ -43,6 +44,7 @@ export function EventsScreen({
   onToggleAutoAlarm: (accountId: string, autoAlarm: boolean) => Promise<void>;
 }) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [alarms, setAlarms] = useState<Record<string, AlarmRecord[]>>({});
   const [loading, setLoading] = useState(true);
@@ -85,15 +87,15 @@ export function EventsScreen({
       setEvents(fetched);
       setSyncWarning(
         failedAccounts.length > 0
-          ? `Couldn't sync: ${failedAccounts.map((a) => a.email).join(', ')}`
+          ? t('events.syncFailed', { emails: failedAccounts.map((a) => a.email).join(', ') })
           : null
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to sync calendar.');
+      setError(e instanceof Error ? e.message : t('events.genericError'));
     } finally {
       isRefresh ? setRefreshing(false) : setLoading(false);
     }
-  }, [loadAlarms, accounts]);
+  }, [loadAlarms, accounts, t]);
 
   useEffect(() => {
     load();
@@ -156,7 +158,10 @@ export function EventsScreen({
         if (selections.length > 0) {
           const authorized = await requestAlarmAuthorization();
           if (!authorized) {
-            Alert.alert('Alarm permission denied', 'Enable alarms for CalSync in Settings.');
+            Alert.alert(
+              t('events.alarmPermissionDeniedTitle'),
+              t('events.alarmPermissionDeniedMessage')
+            );
             return;
           }
         }
@@ -202,22 +207,22 @@ export function EventsScreen({
         }));
         setSelectedEvent(null);
       } catch (e) {
-        Alert.alert('Could not update alarms', e instanceof Error ? e.message : String(e));
+        Alert.alert(t('events.updateAlarmsErrorTitle'), e instanceof Error ? e.message : String(e));
       }
     },
-    [selectedEvent, alarms]
+    [selectedEvent, alarms, t]
   );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>Upcoming</Text>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>{t('events.title')}</Text>
         <View style={styles.headerButtons}>
           <Pressable onPress={() => setAllAlarmsSheetVisible(true)}>
-            <Text style={{ color: theme.subtext }}>Alarms</Text>
+            <Text style={{ color: theme.subtext }}>{t('events.alarmsButton')}</Text>
           </Pressable>
           <Pressable onPress={() => setAccountsSheetVisible(true)}>
-            <Text style={{ color: theme.subtext }}>Accounts</Text>
+            <Text style={{ color: theme.subtext }}>{t('common.accounts')}</Text>
           </Pressable>
         </View>
       </View>
@@ -234,12 +239,12 @@ export function EventsScreen({
         <View style={styles.centerBox}>
           <Text style={[styles.errorText, { color: theme.danger }]}>{error}</Text>
           <Pressable onPress={() => load()}>
-            <Text style={{ color: theme.accent, marginTop: spacing.sm }}>Try again</Text>
+            <Text style={{ color: theme.accent, marginTop: spacing.sm }}>{t('common.tryAgain')}</Text>
           </Pressable>
         </View>
       ) : sections.length === 0 ? (
         <View style={styles.centerBox}>
-          <Text style={{ color: theme.subtext }}>No upcoming events in the next 30 days.</Text>
+          <Text style={{ color: theme.subtext }}>{t('events.noEvents')}</Text>
         </View>
       ) : (
         <SectionList

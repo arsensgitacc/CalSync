@@ -1,0 +1,56 @@
+{
+  "common": {
+    "remove": "Удалить",
+    "tryAgain": "Повторить",
+    "accounts": "Аккаунты",
+    "today": "Сегодня",
+    "tomorrow": "Завтра",
+    "allDay": "Весь день",
+    "before": "до",
+    "after": "после",
+    "on": "включён",
+    "off": "выключен",
+    "durationHour": "1 ч",
+    "durationMinutes": "{{count}} мин"
+  },
+  "login": {
+    "subtitle": "Синхронизируйте свой Google Календарь и ставьте настоящие будильники на важные события.",
+    "signIn": "Войти через Google"
+  },
+  "events": {
+    "title": "Предстоящие",
+    "alarmsButton": "Будильники",
+    "noEvents": "Нет предстоящих событий в ближайшие 30 дней.",
+    "syncFailed": "Не удалось синхронизировать: {{emails}}",
+    "genericError": "Не удалось синхронизировать календарь.",
+    "alarmPermissionDeniedTitle": "Доступ к будильникам запрещён",
+    "alarmPermissionDeniedMessage": "Разрешите будильники для CalSync в Настройках.",
+    "updateAlarmsErrorTitle": "Не удалось обновить будильники"
+  },
+  "alarmSheet": {
+    "atStart": "В начале события",
+    "atEnd": "В конце события",
+    "selectPrompt": "Выберите столько будильников, сколько нужно",
+    "readMore": "Читать далее",
+    "showLess": "Свернуть",
+    "clearAlarms": "Очистить будильники",
+    "saveAlarms_one": "Сохранить {{count}} будильник",
+    "saveAlarms_few": "Сохранить {{count}} будильника",
+    "saveAlarms_many": "Сохранить {{count}} будильников",
+    "saveAlarms_other": "Сохранить {{count}} будильника"
+  },
+  "accountsSheet": {
+    "addAccount": "+ Добавить ещё один аккаунт",
+    "autoAlarmLabel": "Автобудильник {{state}} для {{email}}"
+  },
+  "allAlarmsSheet": {
+    "title": "Все будильники",
+    "noAlarms": "Будильники не запланированы.",
+    "eventNotFound": "(событие не найдено — удалено или вне окна синхронизации)",
+    "unrecognizedSection": "Неопознанные будильники (не связаны ни с одним событием в приложении)",
+    "offsetBefore": "За {{duration}} до {{anchor}}",
+    "offsetAfter": "Через {{duration}} после {{anchor}}",
+    "anchorStart": "начала",
+    "anchorEnd": "конца"
+  }
+}

@@ -1,5 +1,6 @@
 import { BottomSheetView } from '@gorhom/bottom-sheet';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BottomSheet } from './BottomSheet';
 import { GoogleAccount } from '../types';
@@ -22,10 +23,12 @@ export function AccountsSheet({
   onRemoveAccount: (accountId: string) => void;
   onToggleAutoAlarm: (accountId: string, autoAlarm: boolean) => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <BottomSheet visible={visible} onClose={onClose} theme={theme}>
       <BottomSheetView style={styles.content}>
-        <Text style={[styles.title, { color: theme.text }]}>Accounts</Text>
+        <Text style={[styles.title, { color: theme.text }]}>{t('common.accounts')}</Text>
 
         {accounts.map((account) => (
           <View key={account.id} style={[styles.row, { borderColor: theme.border }]}>
@@ -36,20 +39,23 @@ export function AccountsSheet({
               onPress={() => onToggleAutoAlarm(account.id, !account.autoAlarm)}
               hitSlop={8}
               style={styles.bellButton}
-              accessibilityLabel={`Auto-alarm ${account.autoAlarm ? 'on' : 'off'} for ${account.email}`}
+              accessibilityLabel={t('accountsSheet.autoAlarmLabel', {
+                state: account.autoAlarm ? t('common.on') : t('common.off'),
+                email: account.email,
+              })}
             >
               <Text style={{ color: account.autoAlarm ? theme.bellOn : theme.bellOff }}>
                 {account.autoAlarm ? '🔔' : '🔕'}
               </Text>
             </Pressable>
             <Pressable onPress={() => onRemoveAccount(account.id)} hitSlop={8}>
-              <Text style={{ color: theme.danger }}>Remove</Text>
+              <Text style={{ color: theme.danger }}>{t('common.remove')}</Text>
             </Pressable>
           </View>
         ))}
 
         <Pressable onPress={onAddAccount} style={[styles.addButton, { borderColor: theme.accent }]}>
-          <Text style={{ color: theme.accent, fontWeight: '600' }}>+ Add another account</Text>
+          <Text style={{ color: theme.accent, fontWeight: '600' }}>{t('accountsSheet.addAccount')}</Text>
         </Pressable>
       </BottomSheetView>
     </BottomSheet>

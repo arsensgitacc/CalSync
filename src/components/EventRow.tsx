@@ -1,14 +1,16 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { getLocaleTag } from '../i18n';
 import { CalendarEvent } from '../types';
 import { Theme, radius, spacing } from '../theme';
 
 function formatClock(iso: string) {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString(getLocaleTag(), { hour: 'numeric', minute: '2-digit' });
 }
 
-function formatTimeRange(event: CalendarEvent) {
-  if (event.isAllDay) return 'All day';
+function formatTimeRange(event: CalendarEvent, allDayLabel: string) {
+  if (event.isAllDay) return allDayLabel;
   const start = formatClock(event.startISO);
   if (!event.endISO) return start;
   return `${start} - ${formatClock(event.endISO)}`;
@@ -25,6 +27,8 @@ export function EventRow({
   theme: Theme;
   onPress: () => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <Pressable
       onPress={onPress}
@@ -35,7 +39,9 @@ export function EventRow({
     >
       <View style={[styles.colorBar, { backgroundColor: event.calendarColor }]} />
       <View style={styles.textBlock}>
-        <Text style={[styles.time, { color: theme.subtext }]}>{formatTimeRange(event)}</Text>
+        <Text style={[styles.time, { color: theme.subtext }]}>
+          {formatTimeRange(event, t('common.allDay'))}
+        </Text>
         <Text style={[styles.title, { color: theme.text }]} numberOfLines={1}>
           {event.title}
         </Text>
