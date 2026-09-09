@@ -35,8 +35,6 @@
     "showLess": "Свернуть",
     "clearAlarms": "Очистить будильники",
     "saveAlarms_one": "Сохранить {{count}} будильник",
-    "saveAlarms_few": "Сохранить {{count}} будильника",
-    "saveAlarms_many": "Сохранить {{count}} будильников",
     "saveAlarms_other": "Сохранить {{count}} будильника"
   },
   "accountsSheet": {
