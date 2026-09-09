@@ -50,5 +50,12 @@
     "offsetAfter": "Через {{duration}} после {{anchor}}",
     "anchorStart": "начала",
     "anchorEnd": "конца"
+  },
+  "settings": {
+    "title": "Настройки",
+    "languageLabel": "Язык",
+    "snoozeDurationLabel": "Время Снуса",
+    "darkModeLabel": "Темнотааа",
+    "signOutConfirm": "Выходишь {{email}}?"
   }
 }

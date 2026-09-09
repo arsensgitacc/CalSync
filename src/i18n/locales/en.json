@@ -50,5 +50,12 @@
     "offsetAfter": "{{duration}} after {{anchor}}",
     "anchorStart": "start",
     "anchorEnd": "end"
+  },
+  "settings": {
+    "title": "Settings",
+    "languageLabel": "Language",
+    "snoozeDurationLabel": "Snooze duration",
+    "darkModeLabel": "Dark mode",
+    "signOutConfirm": "Are you sure you want to sign out of {{email}}?"
   }
 }
