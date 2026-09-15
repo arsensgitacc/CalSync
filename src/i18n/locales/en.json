@@ -2,6 +2,7 @@
   "common": {
     "remove": "Remove",
     "save":"Save",
+    "exit": "Exit",
     "tryAgain": "Try again",
     "accounts": "Accounts",
     "today": "Today",
