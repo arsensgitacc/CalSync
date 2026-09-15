@@ -2,6 +2,7 @@
   "common": {
     "remove": "Удалить",
     "save": "Сохранить",
+    "exit": "Exit",
     "tryAgain": "Повторить",
     "accounts": "Аккаунты",
     "today": "Сегодня",
