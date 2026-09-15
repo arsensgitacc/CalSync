@@ -3,7 +3,7 @@
     "remove": "Удалить",
     "save": "Сохранить",
     "exit": "Выйти",
-    "DoNotWorry": "Не переживай",
+    "DoNotWorry": "Чиль",
     "tryAgain": "Повторить",
     "accounts": "Аккаунты",
     "today": "Сегодня",
@@ -37,7 +37,7 @@
     "readMore": "Читать далее",
     "showLess": "Свернуть",
     "clearAlarms": "Очистить будильники",
-    "saveAlarms_one": "Сохранить {{count}} будильник",
+    "saveAlarms_one": "Сохранить {{count}} будильник сука",
     "saveAlarms_other": "Сохранить {{count}} будильника"
   },
   "accountsSheet": {
