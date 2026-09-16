@@ -56,7 +56,6 @@ jobs:
           download_translations: true
           skip_ref_checkout: true
           crowdin_branch_name: ${{ steps.branch.outputs.crowdin_name }}
-          skip_untranslated_strings: true
           create_pull_request: true
           pull_request_base_branch_name: ${{ steps.branch.outputs.git_name }}
           localization_branch_name: l10n-custom_${{ steps.branch.outputs.git_name }}
