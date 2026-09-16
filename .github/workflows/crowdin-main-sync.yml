@@ -1,0 +1,24 @@
+name: Crowdin main sync
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/i18n/locales/*.json'
+
+concurrency:
+  group: crowdin-sync-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: crowdin/github-action@v3
+        with:
+          project_id: ${{ secrets.CROWDIN_PROJECT_ID }}
+          token: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+          upload_sources: true
+          upload_translations: true
