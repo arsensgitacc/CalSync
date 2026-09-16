@@ -1,4 +1,4 @@
-name: Crowdin master sync
+name: Crowdin main sync
 
 on:
   push:
