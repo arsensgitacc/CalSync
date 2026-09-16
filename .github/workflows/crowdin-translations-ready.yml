@@ -40,7 +40,6 @@ jobs:
           skip_ref_checkout: true
           crowdin_branch_name: ${{ env.TARGET_BRANCH }}
           skip_untranslated_strings: true
-          skip_untranslated_files: true
           create_pull_request: true
           pull_request_base_branch_name: ${{ env.TARGET_BRANCH }}
           localization_branch_name: l10n-custom_${{ env.TARGET_BRANCH }}
