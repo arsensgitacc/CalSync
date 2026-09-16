@@ -22,8 +22,9 @@ jobs:
       - uses: crowdin/github-action@v3
         continue-on-error: true
         with:
-          project_id: ${{ secrets.CROWDIN_PROJECT_ID }}
-          token: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
           upload_sources: false
           command: 'branch delete'
-          command_args: '${{ steps.crowdin_branch.outputs.name }}'
+          command_args: >-
+            ${{ steps.crowdin_branch.outputs.name }}
+            -T ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+            -i ${{ secrets.CROWDIN_PROJECT_ID }}
