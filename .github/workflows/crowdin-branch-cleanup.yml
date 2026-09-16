@@ -2,25 +2,23 @@ name: Crowdin branch cleanup
 
 on:
   delete:
-  pull_request:
-    types: [closed]
 
 jobs:
   cleanup:
     if: |
-      startsWith(github.event.ref || github.event.pull_request.head.ref, 'feature/') ||
-      startsWith(github.event.ref || github.event.pull_request.head.ref, 'bugfix/') ||
-      startsWith(github.event.ref || github.event.pull_request.head.ref, 'hotfix/')
+      startsWith(github.event.ref, 'feature/') ||
+      startsWith(github.event.ref, 'bugfix/') ||
+      startsWith(github.event.ref, 'hotfix/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.event.repository.default_branch }}
       - name: Resolve Crowdin-safe branch name
         id: crowdin_branch
         run: echo "name=${GIT_BRANCH//\//.}" >> "$GITHUB_OUTPUT"
         env:
-          GIT_BRANCH: ${{ github.event.ref || github.event.pull_request.head.ref }}
+          GIT_BRANCH: ${{ github.event.ref }}
       - uses: crowdin/github-action@v3
         continue-on-error: true
         with:
