@@ -13,6 +13,11 @@ jobs:
       startsWith(github.event.ref || github.event.pull_request.head.ref, 'hotfix/')
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve Crowdin-safe branch name
+        id: crowdin_branch
+        run: echo "name=${GIT_BRANCH//\//.}" >> "$GITHUB_OUTPUT"
+        env:
+          GIT_BRANCH: ${{ github.event.ref || github.event.pull_request.head.ref }}
       - uses: crowdin/github-action@v3
         continue-on-error: true
         with:
@@ -20,4 +25,4 @@ jobs:
           token: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
           upload_sources: false
           command: 'branch delete'
-          command_args: '${{ github.event.ref || github.event.pull_request.head.ref }}'
+          command_args: '${{ steps.crowdin_branch.outputs.name }}'
