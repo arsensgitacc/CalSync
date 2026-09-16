@@ -9,18 +9,20 @@ on:
     paths:
       - 'src/i18n/locales/en.json'
 
+concurrency:
+  group: crowdin-sync-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Upload sources to Crowdin branch
-        uses: crowdin/github-action@v2
+      - uses: crowdin/github-action@v3
         with:
+          project_id: ${{ secrets.CROWDIN_PROJECT_ID }}
+          token: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+          base_url: 'https://libertexgroup.api.crowdin.com'
           upload_sources: true
           upload_translations: false
           crowdin_branch_name: ${{ github.ref_name }}
-          config: crowdin.yml
-        env:
-          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
-          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
