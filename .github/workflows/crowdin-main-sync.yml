@@ -1,9 +1,9 @@
-name: Crowdin main sync
+name: Crowdin master sync
 
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       - 'src/i18n/locales/*.json'
 
