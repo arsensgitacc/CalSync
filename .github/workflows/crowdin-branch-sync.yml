@@ -18,10 +18,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Resolve Crowdin-safe branch name
+        id: crowdin_branch
+        run: echo "name=${GIT_BRANCH//\//.}" >> "$GITHUB_OUTPUT"
+        env:
+          GIT_BRANCH: ${{ github.ref_name }}
       - uses: crowdin/github-action@v3
         with:
           project_id: ${{ secrets.CROWDIN_PROJECT_ID }}
           token: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
           upload_sources: true
           upload_translations: false
-          crowdin_branch_name: ${{ github.ref_name }}
+          crowdin_branch_name: ${{ steps.crowdin_branch.outputs.name }}
