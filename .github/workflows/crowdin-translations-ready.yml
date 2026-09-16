@@ -20,22 +20,33 @@ concurrency:
 jobs:
   open-translations-pr:
     runs-on: ubuntu-latest
-    env:
-      TARGET_BRANCH: ${{ github.event.client_payload.branch || inputs.branch }}
     if: |
-      startsWith(github.event.client_payload.branch || inputs.branch, 'feature/') ||
-      startsWith(github.event.client_payload.branch || inputs.branch, 'bugfix/') ||
-      startsWith(github.event.client_payload.branch || inputs.branch, 'hotfix/')
+      startsWith(github.event.client_payload.branch, 'feature.') ||
+      startsWith(github.event.client_payload.branch, 'bugfix.') ||
+      startsWith(github.event.client_payload.branch, 'hotfix.') ||
+      startsWith(inputs.branch, 'feature/') ||
+      startsWith(inputs.branch, 'bugfix/') ||
+      startsWith(inputs.branch, 'hotfix/')
     steps:
+      - name: Resolve branch names (git form + Crowdin form)
+        id: branch
+        run: |
+          if [ -n "$DISPATCH_BRANCH" ]; then
+            CROWDIN_NAME="$DISPATCH_BRANCH"
+            GIT_NAME="$(echo "$CROWDIN_NAME" | sed 's/\./\//')"
+          else
+            GIT_NAME="$MANUAL_BRANCH"
+            CROWDIN_NAME="${GIT_NAME//\//.}"
+          fi
+          echo "git_name=$GIT_NAME" >> "$GITHUB_OUTPUT"
+          echo "crowdin_name=$CROWDIN_NAME" >> "$GITHUB_OUTPUT"
+        env:
+          DISPATCH_BRANCH: ${{ github.event.client_payload.branch }}
+          MANUAL_BRANCH: ${{ inputs.branch }}
+
       - uses: actions/checkout@v4
         with:
-          ref: ${{ env.TARGET_BRANCH }}
-
-      - name: Resolve Crowdin-safe branch name
-        id: crowdin_branch
-        run: echo "name=${GIT_BRANCH//\//.}" >> "$GITHUB_OUTPUT"
-        env:
-          GIT_BRANCH: ${{ env.TARGET_BRANCH }}
+          ref: ${{ steps.branch.outputs.git_name }}
 
       - uses: crowdin/github-action@v3
         with:
@@ -44,12 +55,12 @@ jobs:
           upload_sources: false
           download_translations: true
           skip_ref_checkout: true
-          crowdin_branch_name: ${{ steps.crowdin_branch.outputs.name }}
+          crowdin_branch_name: ${{ steps.branch.outputs.crowdin_name }}
           skip_untranslated_strings: true
           create_pull_request: true
-          pull_request_base_branch_name: ${{ env.TARGET_BRANCH }}
-          localization_branch_name: l10n-custom_${{ env.TARGET_BRANCH }}
-          pull_request_title: 'New Crowdin translations for ${{ env.TARGET_BRANCH }}'
+          pull_request_base_branch_name: ${{ steps.branch.outputs.git_name }}
+          localization_branch_name: l10n-custom_${{ steps.branch.outputs.git_name }}
+          pull_request_title: 'New Crowdin translations for ${{ steps.branch.outputs.git_name }}'
           commit_message: 'chore: update translations from Crowdin'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
