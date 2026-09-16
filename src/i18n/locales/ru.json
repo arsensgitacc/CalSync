@@ -5,9 +5,10 @@
     "exit": "Выйти",
     "newString1": "Новые Стринги 1",
     "newString2": "Новые Стринги 2",
-    "newString3": "New String 3",
-    "newString4": "New String 4",
-    "DoNotWorry": "Чиль",
+    "newString3": "Новые Стринги 3",
+    "newString4": "Новые Стринги 4",
+    "newString5": "Новые Стринги 5",
+    "DoNotWorry": "Do Not Worry Dude",
     "tryAgain": "Повторить",
     "accounts": "Аккаунты",
     "today": "Сегодня",
@@ -42,27 +43,27 @@
     "showLess": "Свернуть",
     "clearAlarms": "Очистить будильники",
     "saveAlarms_one": "Сохранить {{count}} будильник сука",
-    "saveAlarms_other": "Сохранить {{count}} будильника"
+    "saveAlarms_other": "Save {{count}} Alarms"
   },
   "accountsSheet": {
-    "addAccount": "+ Добавить ещё один аккаунт",
-    "autoAlarmLabel": "Автобудильник {{state}} для {{email}}"
+    "addAccount": "+ Add another account",
+    "autoAlarmLabel": "Auto-alarm {{state}} for {{email}}"
   },
   "allAlarmsSheet": {
-    "title": "Все будильники",
-    "noAlarms": "Будильники не запланированы.",
-    "eventNotFound": "(событие не найдено — удалено или вне окна синхронизации)",
-    "unrecognizedSection": "Неопознанные будильники (не связаны ни с одним событием в приложении)",
-    "offsetBefore": "За {{duration}} до {{anchor}}",
-    "offsetAfter": "Через {{duration}} после {{anchor}}",
-    "anchorStart": "начала",
-    "anchorEnd": "конца"
+    "title": "All Alarms",
+    "noAlarms": "No alarms scheduled.",
+    "eventNotFound": "(event not found - deleted or outside sync window)",
+    "unrecognizedSection": "Unrecognized alarms (not linked to any event in this app)",
+    "offsetBefore": "{{duration}} before {{anchor}}",
+    "offsetAfter": "{{duration}} after {{anchor}}",
+    "anchorStart": "start",
+    "anchorEnd": "end"
   },
   "settings": {
-    "title": "Настройки",
-    "languageLabel": "Язык",
-    "snoozeDurationLabel": "Время Снуса",
-    "darkModeLabel": "Темнотааа",
-    "signOutConfirm": "Выходишь {{email}}?"
+    "title": "Settings",
+    "languageLabel": "Language",
+    "snoozeDurationLabel": "Snooze duration",
+    "darkModeLabel": "Dark mode",
+    "signOutConfirm": "Are you sure you want to sign out of {{email}}?"
   }
 }
