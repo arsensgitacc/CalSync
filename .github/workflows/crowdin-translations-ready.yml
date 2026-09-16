@@ -31,6 +31,12 @@ jobs:
         with:
           ref: ${{ env.TARGET_BRANCH }}
 
+      - name: Resolve Crowdin-safe branch name
+        id: crowdin_branch
+        run: echo "name=${GIT_BRANCH//\//.}" >> "$GITHUB_OUTPUT"
+        env:
+          GIT_BRANCH: ${{ env.TARGET_BRANCH }}
+
       - uses: crowdin/github-action@v3
         with:
           project_id: ${{ secrets.CROWDIN_PROJECT_ID }}
@@ -38,7 +44,7 @@ jobs:
           upload_sources: false
           download_translations: true
           skip_ref_checkout: true
-          crowdin_branch_name: ${{ env.TARGET_BRANCH }}
+          crowdin_branch_name: ${{ steps.crowdin_branch.outputs.name }}
           skip_untranslated_strings: true
           create_pull_request: true
           pull_request_base_branch_name: ${{ env.TARGET_BRANCH }}
